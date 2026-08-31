@@ -15,22 +15,39 @@ function cleanPromptText(raw: string): string {
   return raw.trim();
 }
 
+export function normalizeModelName(raw: string, defaultModel: string): string {
+  if (!raw || typeof raw !== 'string') return defaultModel;
+  let cleaned = raw.trim();
+
+  // Strip XML/Markdown wrappers or provider prefixes like "google/" or "anthropic/"
+  cleaned = cleaned.replace(/^(google|anthropic|openai|deepseek)\//i, '');
+
+  // Extract from settings change tag if present
+  const modelChangeMatch = cleaned.match(/Model Selection[`'\s]+from[^\n]+to\s+([A-Za-z0-9_.\s-]+)/i);
+  if (modelChangeMatch && modelChangeMatch[1]) {
+    cleaned = modelChangeMatch[1].trim();
+  }
+
+  // Convert "Gemini 3.7 Flash" or "claude.3.7.sonnet" -> "gemini-3.7-flash"
+  cleaned = cleaned
+    .toLowerCase()
+    .replace(/[_\s]+/g, '-')
+    .replace(/[^a-z0-9.-]/g, '');
+
+  return cleaned || defaultModel;
+}
+
 function detectDynamicModel(rawText: string, defaultModel = 'gemini-3.7-flash'): string {
-  // 1. Check for Model Selection string
+  // 1. Check for Model Selection setting change
   const modelChangeMatch = rawText.match(/Model Selection[`'\s]+from[^\n]+to\s+([A-Za-z0-9_.\s-]+)/i);
   if (modelChangeMatch && modelChangeMatch[1]) {
-    const rawName = modelChangeMatch[1].trim().toLowerCase();
-    if (rawName.includes('gemini 3.7 flash') || rawName.includes('gemini-3.7-flash')) return 'gemini-3.7-flash';
-    if (rawName.includes('gemini 2.5 pro') || rawName.includes('gemini-2.5-pro')) return 'gemini-2.5-pro';
-    if (rawName.includes('gemini 2.5 flash') || rawName.includes('gemini-2.5-flash')) return 'gemini-2.5-flash';
-    if (rawName.includes('claude 3.7 sonnet') || rawName.includes('claude-3-7-sonnet')) return 'claude-3-7-sonnet';
-    if (rawName.includes('gpt-4o')) return 'gpt-4o';
+    return normalizeModelName(modelChangeMatch[1], defaultModel);
   }
 
   // 2. Check JSON property patterns
   const jsonModelMatch = rawText.match(/"model(?:_name)?"\s*:\s*"([^"]+)"/i);
   if (jsonModelMatch && jsonModelMatch[1]) {
-    return jsonModelMatch[1].trim().toLowerCase();
+    return normalizeModelName(jsonModelMatch[1], defaultModel);
   }
 
   return defaultModel;

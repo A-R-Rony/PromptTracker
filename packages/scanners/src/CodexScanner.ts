@@ -43,7 +43,8 @@ export class CodexScanner implements ToolScanner {
       const turns: PromptTurn[] = [];
       let inTokTotal = 0;
       let outTokTotal = 0;
-      let model = data.model || 'gpt-4o';
+      let rawModel = data.model || 'gpt-4o';
+      let model = rawModel.replace(/^(openai|google|anthropic)\//i, '').toLowerCase().replace(/\s+/g, '-');
 
       let idx = 0;
       for (const msg of data.messages) {

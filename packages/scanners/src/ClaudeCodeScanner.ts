@@ -53,6 +53,8 @@ export class ClaudeCodeScanner implements ToolScanner {
 
           if (item.model || item.model_name) {
             model = item.model || item.model_name;
+            // Clean provider prefix e.g. "anthropic/claude-4-sonnet" -> "claude-4-sonnet"
+            model = model.replace(/^(anthropic|google|openai|deepseek)\//i, '').toLowerCase().replace(/\s+/g, '-');
           }
 
           if (item.type === 'user_message' || item.role === 'user' || item.prompt) {
