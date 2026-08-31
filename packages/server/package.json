@@ -9,8 +9,8 @@
     "test": "node --test dist/cache.test.js dist/summary.test.js dist/server.test.js"
   },
   "dependencies": {
-    "@prompttracker/core": "workspace:*",
-    "@prompttracker/scanners": "workspace:*",
+    "@prompttracker/core": "*",
+    "@prompttracker/scanners": "*",
     "express": "^4.19.2",
     "open": "^10.1.0"
   },

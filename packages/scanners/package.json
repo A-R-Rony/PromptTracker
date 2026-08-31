@@ -9,7 +9,7 @@
     "test": "node --test dist/**/*.test.js"
   },
   "dependencies": {
-    "@prompttracker/core": "workspace:*"
+    "@prompttracker/core": "*"
   },
   "devDependencies": {
     "@types/node": "^20.14.9",

@@ -2,9 +2,12 @@
   "name": "prompttracker-monorepo",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "build": "pnpm --filter \"@prompttracker/*\" build",
-    "test": "pnpm --filter \"@prompttracker/*\" test"
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces"
   },
   "devDependencies": {
     "typescript": "^5.5.2"

@@ -12,8 +12,8 @@
     "test": "node --test dist/**/*.test.js"
   },
   "dependencies": {
-    "@prompttracker/core": "workspace:*",
-    "@prompttracker/scanners": "workspace:*",
+    "@prompttracker/core": "*",
+    "@prompttracker/scanners": "*",
     "chalk": "^4.1.2",
     "commander": "^12.1.0",
     "open": "^10.1.0",
