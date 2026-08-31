@@ -1,0 +1,12 @@
+{
+  "name": "prompttracker-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "pnpm --filter \"@prompttracker/*\" build",
+    "test": "pnpm --filter \"@prompttracker/*\" test"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.2"
+  }
+}

@@ -7,7 +7,7 @@ Scaffold the monorepo root workspace with `packages/core`, containing the canoni
 
 **Status:** ready-for-agent
 
-- [ ] Initialize `packages/core` with `package.json` and `tsconfig.json`.
-- [ ] Export normalized domain types from `packages/core/src/types`.
-- [ ] Implement and unit test `pricing.ts` with model token estimation.
-- [ ] Implement and unit test `SessionStorageManager` with memory spillover to `~/.prompttracker/cache`.
+- [x] Initialize `packages/core` with `package.json` and `tsconfig.json`.
+- [x] Export normalized domain types from `packages/core/src/types`.
+- [x] Implement and unit test `pricing.ts` with model token estimation.
+- [x] Implement and unit test `SessionStorageManager` with memory spillover to `~/.prompttracker/cache`.

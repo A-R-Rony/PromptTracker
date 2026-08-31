@@ -1,0 +1,15 @@
+{
+  "name": "@prompttracker/core",
+  "version": "0.1.0",
+  "description": "Core domain schemas, token pricing matrix, and storage manager for PromptTracker",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/pricing.test.js dist/storage.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "typescript": "^5.5.2"
+  }
+}
