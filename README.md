@@ -45,26 +45,69 @@ prompttracker ui
 
 ---
 
-## 💻 CLI Usage
+## 💻 CLI Command Reference
 
+### 1. Default Project Scoping (Smart CWD)
+When run without flags, `prompttracker` automatically inspects your **Current Working Directory (CWD)** and filters sessions to the active repository (including monorepo subfolders like `packages/` or `src/`):
 ```bash
-# Scan current repository sessions
+# Scan sessions for the current project
 prompttracker
-
-# Scan all global sessions across the entire filesystem
-prompttracker --all
-
-# Filter by specific date or date range
-prompttracker --date 2026-08-31
-prompttracker --since 7d
-prompttracker --since 2026-08-01 --until 2026-08-31
-
-# Filter by project name
-prompttracker --project MyAwesomeApp
-
-# Non-interactive summary output (great for CI or scripts)
-prompttracker --no-interactive
 ```
+
+### 2. Machine-Wide Global View (`-a, --all`)
+To view all AI coding sessions recorded across all repositories and directories on your computer:
+```bash
+# Scan everything across your entire filesystem
+prompttracker --all
+```
+
+### 3. Date & Time Filtering (`--date`, `--since`, `--until`)
+Slice and dice your prompt telemetry by exact calendar dates or relative horizons:
+```bash
+# View today's prompt activity
+prompttracker --date today
+
+# View yesterday's activity across all projects
+prompttracker --all --date yesterday
+
+# View activity from the last 7 or 30 days
+prompttracker --since 7d
+prompttracker --since 30d
+
+# Custom date range (e.g. August 2026)
+prompttracker --since 2026-08-01 --until 2026-08-31
+```
+
+### 4. Explicit Project Filtering (`-p, --project <name>`)
+Search sessions matching a specific project name or folder substring:
+```bash
+# Filter by project name
+prompttracker --project LeetCode
+prompttracker --project PromptTracker
+```
+
+### 5. Script & CI Automation (`-n, --no-interactive`)
+Output telemetry cards directly to stdout without launching the interactive prompt selector:
+```bash
+# Clean summary output for scripts or logs
+prompttracker --no-interactive
+prompttracker --all --since 7d --no-interactive
+```
+
+---
+
+### 📋 CLI Options Quick Reference Table
+
+| Option | Shorthand | Description | Example |
+| :--- | :--- | :--- | :--- |
+| `[default]` | — | Smart CWD: Auto-filters to active project folder | `prompttracker` |
+| `--all` | `-a` | Global scan across entire filesystem | `prompttracker -a` |
+| `--project <name>`| `-p` | Filter sessions by project name or directory path | `prompttracker -p LeetCode` |
+| `--date <date>` | `-d` | Filter by exact date or preset (`today`, `yesterday`, `YYYY-MM-DD`) | `prompttracker -d today` |
+| `--since <val>` | — | Filter on or after relative interval (`7d`, `30d`) or date | `prompttracker --since 7d` |
+| `--until <val>` | — | Filter up to specific date (`YYYY-MM-DD`) | `prompttracker --until 2026-08-31` |
+| `--no-interactive`| `-n` | Print summary cards without interactive TUI | `prompttracker -n` |
+| `--help` | `-h` | Display all available commands and flags | `prompttracker --help` |
 
 ---
 
