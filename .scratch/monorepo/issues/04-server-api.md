@@ -7,7 +7,7 @@ Create `packages/server` providing local REST API endpoints (`/api/sessions`, `/
 
 **Status:** ready-for-agent
 
-- [ ] Implement Express server in `packages/server`.
-- [ ] Implement `GET /api/sessions` with `force=true` query refresh.
-- [ ] Implement `GET /api/summary` calculating daily summaries, tool aggregates, and model spend breakdown.
-- [ ] Implement `POST /api/open-session` to export Markdown transcript and trigger editor launch.
+- [x] Implement Express server in `packages/server`.
+- [x] Implement `GET /api/sessions` with `force=true` query refresh.
+- [x] Implement `GET /api/summary` calculating daily summaries, tool aggregates, and model spend breakdown.
+- [x] Implement `POST /api/open-session` to export Markdown transcript and trigger editor launch.

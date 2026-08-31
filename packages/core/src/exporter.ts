@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { NormalizedSession } from '../../core/dist';
+import { NormalizedSession } from './types';
 
 export function exportSessionToMarkdown(session: NormalizedSession): string {
   const exportDir = path.join(os.homedir(), '.prompttracker', 'exports');

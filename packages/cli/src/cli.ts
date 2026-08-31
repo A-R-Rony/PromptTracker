@@ -4,9 +4,8 @@ import open from 'open';
 import prompts from 'prompts';
 import * as path from 'path';
 import { exec } from 'child_process';
-import { NormalizedSession, SessionStorageManager } from '../../core/dist';
+import { NormalizedSession, SessionStorageManager, exportSessionToMarkdown } from '../../core/dist';
 import { ScannerRegistry } from '../../scanners/dist';
-import { exportSessionToMarkdown } from './exporter';
 import { filterSessionsByDate, DateFilterOptions } from './dateFilter';
 
 const program = new Command();

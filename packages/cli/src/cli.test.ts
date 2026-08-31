@@ -3,9 +3,8 @@ import assert from 'node:assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { exportSessionToMarkdown } from './exporter';
+import { NormalizedSession, exportSessionToMarkdown } from '../../core/dist';
 import { filterSessionsByDate, parseRelativeDate } from './dateFilter';
-import { NormalizedSession } from '../../core/dist';
 
 describe('CLI Package Utilities', () => {
   const sampleSessions: NormalizedSession[] = [

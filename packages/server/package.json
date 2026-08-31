@@ -1,0 +1,22 @@
+{
+  "name": "@prompttracker/server",
+  "version": "0.1.0",
+  "description": "Express REST API (/api/sessions, /api/summary, /api/open-session), static file serving, and IDE launcher for PromptTracker",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/cache.test.js dist/summary.test.js dist/server.test.js"
+  },
+  "dependencies": {
+    "@prompttracker/core": "workspace:*",
+    "@prompttracker/scanners": "workspace:*",
+    "express": "^4.19.2",
+    "open": "^10.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.9",
+    "typescript": "^5.5.2"
+  }
+}

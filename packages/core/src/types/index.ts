@@ -34,13 +34,19 @@ export interface ToolScanner {
   scan(): Promise<NormalizedSession[]>;
 }
 
+export interface MetricAggregate {
+  prompts: number;
+  tokens: number;
+  cost: number;
+}
+
 export interface DailySummary {
   date: string;
   totalPrompts: number;
   totalTokens: number;
   totalCostUsd: number;
   sessionsCount: number;
-  byTool: Record<string, { prompts: number; tokens: number; cost: number }>;
-  byModel: Record<string, { prompts: number; tokens: number; cost: number }>;
-  byProject: Record<string, { prompts: number; tokens: number; cost: number }>;
+  byTool: Record<string, MetricAggregate>;
+  byModel: Record<string, MetricAggregate>;
+  byProject: Record<string, MetricAggregate>;
 }

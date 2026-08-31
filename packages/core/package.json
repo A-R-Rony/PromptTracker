@@ -6,7 +6,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "node --test dist/pricing.test.js dist/storage.test.js"
+    "test": "node --test dist/pricing.test.js dist/storage.test.js dist/exporter.test.js"
   },
   "devDependencies": {
     "@types/node": "^20.14.9",
