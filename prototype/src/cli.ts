@@ -145,6 +145,116 @@ async function showInteractiveMenu(
   }
 }
 
+async function runScan(options: {
+  all?: boolean;
+  project?: string;
+  date?: string;
+  since?: string;
+  until?: string;
+  noInteractive?: boolean;
+}) {
+  console.log(chalk.cyan.bold('\n🔥 Scanning local AI coding sessions...\n'));
+  const registry = new ScannerRegistry();
+  let rawSessions = await registry.scanAll();
+
+  // Pass through Memory Manager for threshold check and disk spillover
+  for (const s of rawSessions) {
+    storageManager.manageSessionMemory(s);
+  }
+
+  let scopeLabel = 'All Projects';
+  const cwd = placeholderPath(process.cwd());
+  const cwdName = path.basename(cwd);
+
+  let sessions = rawSessions;
+
+  if (options.project) {
+    const q = options.project.toLowerCase();
+    sessions = sessions.filter(s =>
+      (s.projectPath && s.projectPath.toLowerCase().includes(q)) ||
+      s.projectName.toLowerCase().includes(q)
+    );
+    scopeLabel = 'Project: ' + options.project;
+  } else if (!options.all) {
+    const parentDir = placeholderPath(path.resolve(cwd, '..'));
+    const parentName = path.basename(parentDir);
+
+    const matched = rawSessions.filter(s => {
+      if (!s.projectPath) return false;
+      const p = placeholderPath(s.projectPath).toLowerCase();
+      const cur = cwd.toLowerCase();
+      const par = parentDir.toLowerCase();
+      const curN = cwdName.toLowerCase();
+      const parN = parentName.toLowerCase();
+
+      return (
+        p === cur ||
+        p === par ||
+        p.startsWith(cur) ||
+        cur.startsWith(p) ||
+        p.startsWith(par) ||
+        par.startsWith(p) ||
+        p.includes(curN) ||
+        p.includes(parN)
+      );
+    });
+
+    if (matched.length > 0) {
+      sessions = matched;
+      scopeLabel = 'Project: ' + (cwdName === 'prototype' ? parentName : cwdName);
+    } else {
+      scopeLabel = 'All Projects (Global)';
+    }
+  }
+
+  // Apply Date Filtering
+  const dateFilterOpts: DateFilterOptions = {
+    date: options.date,
+    since: options.since,
+    until: options.until
+  };
+  const { filtered: dateFilteredSessions, label: dateLabel } = filterSessionsByDate(sessions, dateFilterOpts);
+
+  if (dateFilteredSessions.length === 0) {
+    console.log(chalk.yellow(`No sessions found for ${scopeLabel} matching date filter (${dateLabel}).`));
+    return;
+  }
+
+  let totalTokens = 0;
+  let totalCost = 0;
+  let totalPrompts = 0;
+
+  for (const s of dateFilteredSessions) {
+    totalTokens += s.totalTokens.total;
+    totalCost += s.estimatedCostUsd || 0;
+    totalPrompts += s.turns.length;
+  }
+
+  const memStats = storageManager.getMemoryUsageSummary();
+
+  console.log(chalk.bold(`[${scopeLabel} | ${dateLabel}]`));
+  console.log(
+    chalk.bold('USAGE SUMMARY:') + '  ' +
+    chalk.yellow('Prompts: ' + totalPrompts) + ' | ' +
+    chalk.cyan('Tokens: ' + totalTokens.toLocaleString()) + ' | ' +
+    chalk.green('Cost: $' + totalCost.toFixed(4)) + ' | ' +
+    chalk.gray(`Memory: ${memStats.currentMb}/${memStats.maxMb}MB (${memStats.spilledCount} spilled)`) + '\n'
+  );
+
+  if (options.noInteractive !== true) {
+    await showInteractiveMenu(sessions, dateFilteredSessions, scopeLabel, dateLabel);
+  }
+}
+
+program
+  .option('-a, --all', 'Scan all global projects and sessions')
+  .option('-p, --project <name>', 'Filter by specific project name or path')
+  .option('-d, --date <YYYY-MM-DD>', 'Filter by exact date (YYYY-MM-DD)')
+  .option('--since <date_or_relative>', 'Filter sessions on or after date (e.g. 7d, 30d, 2026-08-01)')
+  .option('--until <date>', 'Filter sessions up to date (YYYY-MM-DD)')
+  .option('-n, --no-interactive', 'Disable interactive selector')
+  .action(runScan);
+
 program
   .command('scan')
   .description('Scan AI coding sessions with smart date and project filtering')
@@ -154,91 +264,7 @@ program
   .option('--since <date_or_relative>', 'Filter sessions on or after date (e.g. 7d, 30d, 2026-08-01)')
   .option('--until <date>', 'Filter sessions up to date (YYYY-MM-DD)')
   .option('-n, --no-interactive', 'Disable interactive selector')
-  .action(async (options: {
-    all?: boolean;
-    project?: string;
-    date?: string;
-    since?: string;
-    until?: string;
-    noInteractive?: boolean;
-  }) => {
-    console.log(chalk.cyan.bold('\n🔥 Scanning local AI coding sessions...\n'));
-    const registry = new ScannerRegistry();
-    let rawSessions = await registry.scanAll();
-
-    // Pass through Memory Manager for threshold check and disk spillover
-    for (const s of rawSessions) {
-      storageManager.manageSessionMemory(s);
-    }
-
-    let scopeLabel = 'All Projects';
-    const cwd = placeholderPath(process.cwd());
-    const cwdName = path.basename(cwd);
-
-    let sessions = rawSessions;
-
-    if (options.project) {
-      const q = options.project.toLowerCase();
-      sessions = sessions.filter(s =>
-        (s.projectPath && s.projectPath.toLowerCase().includes(q)) ||
-        s.projectName.toLowerCase().includes(q)
-      );
-      scopeLabel = 'Project: ' + options.project;
-    } else if (!options.all) {
-      const matched = sessions.filter(s => 
-        s.projectPath && (
-          placeholderPath(s.projectPath).toLowerCase().includes(cwd.toLowerCase()) ||
-          cwd.toLowerCase().includes(placeholderPath(s.projectPath).toLowerCase()) ||
-          placeholderPath(s.projectPath).toLowerCase().includes(cwdName.toLowerCase())
-        )
-      );
-
-      if (matched.length > 0) {
-        sessions = matched;
-        scopeLabel = 'Project: ' + cwdName;
-      } else {
-        scopeLabel = 'All Projects (Global)';
-      }
-    }
-
-    // Apply Date Filtering
-    const dateFilterOpts: DateFilterOptions = {
-      date: options.date,
-      since: options.since,
-      until: options.until
-    };
-    const { filtered: dateFilteredSessions, label: dateLabel } = filterSessionsByDate(sessions, dateFilterOpts);
-
-    if (dateFilteredSessions.length === 0) {
-      console.log(chalk.yellow(`No sessions found for ${scopeLabel} matching date filter (${dateLabel}).`));
-      return;
-    }
-
-    let totalTokens = 0;
-    let totalCost = 0;
-    let totalPrompts = 0;
-
-    for (const s of dateFilteredSessions) {
-      totalTokens += s.totalTokens.total;
-      totalCost += s.estimatedCostUsd || 0;
-      totalPrompts += s.turns.length;
-    }
-
-    const memStats = storageManager.getMemoryUsageSummary();
-
-    console.log(chalk.bold(`[${scopeLabel} | ${dateLabel}]`));
-    console.log(
-      chalk.bold('USAGE SUMMARY:') + '  ' +
-      chalk.yellow('Prompts: ' + totalPrompts) + ' | ' +
-      chalk.cyan('Tokens: ' + totalTokens.toLocaleString()) + ' | ' +
-      chalk.green('Cost: $' + totalCost.toFixed(4)) + ' | ' +
-      chalk.gray(`Memory: ${memStats.currentMb}/${memStats.maxMb}MB (${memStats.spilledCount} spilled)`) + '\n'
-    );
-
-    if (options.noInteractive !== true) {
-      await showInteractiveMenu(sessions, dateFilteredSessions, scopeLabel, dateLabel);
-    }
-  });
+  .action(runScan);
 
 program
   .command('ui')
