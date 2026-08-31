@@ -1,0 +1,27 @@
+{
+  "name": "prompttracker",
+  "version": "0.1.0",
+  "description": "Universal AI Coding Prompt and Token Usage Telemetry Tracker",
+  "main": "dist/index.js",
+  "bin": {
+    "prompttracker": "./dist/cli.js",
+    "promptburn": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/**/*.test.js"
+  },
+  "dependencies": {
+    "@prompttracker/core": "workspace:*",
+    "@prompttracker/scanners": "workspace:*",
+    "chalk": "^4.1.2",
+    "commander": "^12.1.0",
+    "open": "^10.1.0",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "@types/prompts": "^2.4.9",
+    "typescript": "^5.5.2"
+  }
+}
