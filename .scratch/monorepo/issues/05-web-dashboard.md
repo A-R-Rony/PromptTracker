@@ -7,8 +7,8 @@ Create `packages/web` using Vite + React with glassmorphic aesthetics, KPIs (Tot
 
 **Status:** ready-for-agent
 
-- [ ] Scaffold React + Vite app in `packages/web` with glassmorphic CSS styling.
-- [ ] Connect dashboard to `/api/summary` for KPIs and analytics charts.
-- [ ] Connect split-screen conversation reader to `/api/sessions` with search and date filters.
-- [ ] Integrate "Open in IDE" button triggering `/api/open-session`.
-- [ ] Configure build pipeline to bundle static assets into `packages/server/public`.
+- [x] Scaffold React + Vite app in `packages/web` with glassmorphic CSS styling.
+- [x] Connect dashboard to `/api/summary` for KPIs and analytics charts.
+- [x] Connect split-screen conversation reader to `/api/sessions` with search and date filters.
+- [x] Integrate "Open in IDE" button triggering `/api/open-session`.
+- [x] Configure build pipeline to bundle static assets into `packages/server/public`.

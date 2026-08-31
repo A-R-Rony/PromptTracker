@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": false,
+    "outDir": "./dist",
+    "types": ["node"]
+  },
+  "include": [
+    "src/filters.ts",
+    "src/format.ts",
+    "src/api.ts",
+    "src/filters.test.ts",
+    "src/format.test.ts",
+    "src/api.test.ts"
+  ]
+}

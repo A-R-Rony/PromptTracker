@@ -50,3 +50,13 @@ export interface DailySummary {
   byModel: Record<string, MetricAggregate>;
   byProject: Record<string, MetricAggregate>;
 }
+
+export interface TelemetrySummary {
+  totalTokens: number;
+  totalPrompts: number;
+  totalCostUsd: number;
+  totalSessions: number;
+  byTool: Record<string, MetricAggregate>;
+  byModel: Record<string, MetricAggregate>;
+  daily: DailySummary[];
+}

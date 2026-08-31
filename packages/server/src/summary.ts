@@ -1,14 +1,6 @@
-import { DailySummary, MetricAggregate, NormalizedSession } from '../../core/dist';
+import { DailySummary, MetricAggregate, NormalizedSession, TelemetrySummary } from '../../core/dist';
 
-export interface TelemetrySummary {
-  totalTokens: number;
-  totalPrompts: number;
-  totalCostUsd: number;
-  totalSessions: number;
-  byTool: Record<string, MetricAggregate>;
-  byModel: Record<string, MetricAggregate>;
-  daily: DailySummary[];
-}
+export type { TelemetrySummary };
 
 function addToAggregate(map: Record<string, MetricAggregate>, key: string, session: NormalizedSession): void {
   if (!map[key]) {
