@@ -22,11 +22,14 @@ export function normalizeModelName(raw: string, defaultModel: string): string {
   // Strip XML/Markdown wrappers or provider prefixes like "google/" or "anthropic/"
   cleaned = cleaned.replace(/^(google|anthropic|openai|deepseek)\//i, '');
 
-  // Extract from settings change tag if present
-  const modelChangeMatch = cleaned.match(/Model Selection[`'\s]+from[^\n]+to\s+([A-Za-z0-9_.\s-]+)/i);
+  // Extract from settings change tag if present (stops before "(Low)", "(High)", or sentence end)
+  const modelChangeMatch = cleaned.match(/Model Selection[`'\s]+(?:from[^\n]+?to\s+|to\s+)([^\n\r]+?)(?=\s*\([^)]*\)|\.\s+|\n|$)/i);
   if (modelChangeMatch && modelChangeMatch[1]) {
     cleaned = modelChangeMatch[1].trim();
   }
+
+  // Strip trailing thinking mode markers like "(Low)" or "(High)"
+  cleaned = cleaned.replace(/\s*\([^)]*\)/g, '').trim();
 
   // Convert "Gemini 3.7 Flash" or "claude.3.7.sonnet" -> "gemini-3.7-flash"
   cleaned = cleaned
@@ -38,8 +41,8 @@ export function normalizeModelName(raw: string, defaultModel: string): string {
 }
 
 function detectDynamicModel(rawText: string, defaultModel = 'gemini-3.7-flash'): string {
-  // 1. Check for Model Selection setting change
-  const modelChangeMatch = rawText.match(/Model Selection[`'\s]+from[^\n]+to\s+([A-Za-z0-9_.\s-]+)/i);
+  // 1. Check for Model Selection setting change (e.g., "Model Selection` from None to Gemini 3.7 Flash (Low)...")
+  const modelChangeMatch = rawText.match(/Model Selection[`'\s]+(?:from[^\n]+?to\s+|to\s+)([^\n\r]+?)(?=\s*\([^)]*\)|\.\s+|\n|$)/i);
   if (modelChangeMatch && modelChangeMatch[1]) {
     return normalizeModelName(modelChangeMatch[1], defaultModel);
   }
