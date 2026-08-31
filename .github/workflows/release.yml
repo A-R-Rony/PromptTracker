@@ -1,0 +1,55 @@
+name: Release & Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish to npm & GitHub Releases
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Build All Packages
+        run: |
+          pnpm --filter "@prompttracker/core" build
+          pnpm --filter "@prompttracker/scanners" build
+          pnpm --filter "@prompttracker/cli" build
+          pnpm --filter "@prompttracker/server" build
+          pnpm --filter "@prompttracker/web" build
+
+      - name: Run Tests
+        run: |
+          node --test packages/core/dist/**/*.test.js packages/scanners/dist/**/*.test.js packages/cli/dist/**/*.test.js packages/server/dist/**/*.test.js packages/web/dist/**/*.test.js
+
+      - name: Publish CLI to npm with Provenance
+        run: pnpm --filter "prompttracker" publish --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true

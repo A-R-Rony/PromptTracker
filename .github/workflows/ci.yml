@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [18.x, 20.x, 22.x]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Build Monorepo Packages
+        run: |
+          pnpm --filter "@prompttracker/core" build
+          pnpm --filter "@prompttracker/scanners" build
+          pnpm --filter "@prompttracker/cli" build
+          pnpm --filter "@prompttracker/server" build
+          pnpm --filter "@prompttracker/web" build
+
+      - name: Run Test Suite
+        run: |
+          node --test packages/core/dist/**/*.test.js packages/scanners/dist/**/*.test.js packages/cli/dist/**/*.test.js packages/server/dist/**/*.test.js packages/web/dist/**/*.test.js

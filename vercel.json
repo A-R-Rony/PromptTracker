@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "buildCommand": "pnpm --filter @prompttracker/web build",
+  "outputDirectory": "packages/server/public",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

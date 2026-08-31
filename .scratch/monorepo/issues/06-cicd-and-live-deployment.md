@@ -7,8 +7,8 @@ Configure GitHub Actions workflows for continuous integration (`.github/workflow
 
 **Status:** ready-for-agent
 
-- [ ] Create `turbo.json` with build, test, and lint pipelines.
-- [ ] Configure `.github/workflows/ci.yml` running lint, typecheck, and unit tests across packages.
-- [ ] Configure `.github/workflows/release.yml` with npm trusted publishing / provenance on git tag releases.
-- [ ] Add Vercel deployment configuration (`vercel.json`) with demo mode fallback for web dashboard preview.
-- [ ] Document full installation (`npm i -g prompttracker`) and usage in root `README.md`.
+- [x] Create `turbo.json` with build, test, and lint pipelines.
+- [x] Configure `.github/workflows/ci.yml` running lint, typecheck, and unit tests across packages.
+- [x] Configure `.github/workflows/release.yml` with npm trusted publishing / provenance on git tag releases.
+- [x] Add Vercel deployment configuration (`vercel.json`) with demo mode fallback for web dashboard preview.
+- [x] Document full installation (`npm i -g prompttracker`) and usage in root `README.md`.
