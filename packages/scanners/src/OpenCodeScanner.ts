@@ -43,7 +43,7 @@ export class OpenCodeScanner implements ToolScanner {
 
   private scanFromSQLite(dbPath: string, sessions: NormalizedSession[]) {
     try {
-      // 1. Fetch all sessions in single query
+      // 1. Fetch all session headers in single fast query
       const sessionQuery = `
         SELECT 
           s.id, 
@@ -68,24 +68,25 @@ export class OpenCodeScanner implements ToolScanner {
       if (!rawSessions || !rawSessions.trim()) return;
       const rows = JSON.parse(rawSessions);
 
-      // 2. Fetch all message parts for recent sessions in one single bulk batch
-      const sessionIds = rows.map((r: any) => `'${r.id}'`).join(',');
-      const partsQuery = `
-        SELECT 
-          m.session_id,
-          m.id AS message_id,
-          m.time_created,
-          m.data AS message_data,
-          p.data AS part_data
-        FROM message m
-        JOIN part p ON p.message_id = m.id
-        WHERE m.session_id IN (${sessionIds})
-        ORDER BY m.time_created ASC, p.id ASC;
-      `;
+      // 2. Fetch message roles in a lightweight query without heavy data payload
+      let msgRoleMap: Record<string, { role: string; time: number }> = {};
+      try {
+        const rawMsgs = execSync(`sqlite3 -json "${dbPath}" "SELECT id, session_id, time_created, json_extract(data, '$.role') as role FROM message;"`, {
+          encoding: 'utf8',
+          maxBuffer: 50 * 1024 * 1024
+        });
+        if (rawMsgs && rawMsgs.trim()) {
+          const msgs = JSON.parse(rawMsgs);
+          for (const m of msgs) {
+            msgRoleMap[m.id] = { role: m.role || 'assistant', time: m.time_created };
+          }
+        }
+      } catch {}
 
+      // 3. Fetch only text and step-finish parts (drastically smaller payload than full table scan)
       let partsBySession: Record<string, any[]> = {};
       try {
-        const rawParts = execSync(`sqlite3 -json "${dbPath}" "${partsQuery.replace(/\n/g, ' ')}"`, {
+        const rawParts = execSync(`sqlite3 -json "${dbPath}" "SELECT message_id, session_id, time_created, json_extract(data, '$.type') as type, json_extract(data, '$.text') as text, json_extract(data, '$.tokens') as tokens FROM part WHERE json_extract(data, '$.type') IN ('text', 'step-finish') ORDER BY time_created ASC;"`, {
           encoding: 'utf8',
           maxBuffer: 50 * 1024 * 1024
         });
@@ -115,7 +116,7 @@ export class OpenCodeScanner implements ToolScanner {
 
         // Process turns for this session from pre-fetched map
         const sessionParts = partsBySession[row.id] || [];
-        const turns = this.processPartsIntoTurns(sessionParts, timestamp);
+        const turns = this.processPartsIntoTurns(sessionParts, msgRoleMap, timestamp);
 
         const inTok = row.tokens_input || turns.reduce((acc, t) => acc + t.tokens.input, 0);
         const outTok = row.tokens_output || turns.reduce((acc, t) => acc + t.tokens.output, 0);
@@ -141,43 +142,43 @@ export class OpenCodeScanner implements ToolScanner {
     }
   }
 
-  private processPartsIntoTurns(parts: any[], fallbackTime: string): PromptTurn[] {
+  private processPartsIntoTurns(parts: any[], msgRoleMap: Record<string, { role: string; time: number }>, fallbackTime: string): PromptTurn[] {
     const turns: PromptTurn[] = [];
     let currentTurn: PromptTurn | null = null;
     let turnIdx = 0;
 
     for (const item of parts) {
-      let mData: any = {};
-      let pData: any = {};
-      try { mData = JSON.parse(item.message_data); } catch {}
-      try { pData = JSON.parse(item.part_data); } catch {}
+      const msgInfo = msgRoleMap[item.message_id] || { role: 'assistant', time: item.time_created };
+      const isUser = msgInfo.role === 'user';
 
-      if (mData.role === 'user' && pData.type === 'text' && pData.text) {
+      if (isUser && item.type === 'text' && item.text) {
         turnIdx++;
-        const inTok = approximateTokens(pData.text);
+        const inTok = approximateTokens(item.text);
         currentTurn = {
           turnIndex: turnIdx,
-          timestamp: new Date(item.time_created).toISOString(),
-          userPrompt: pData.text,
+          timestamp: new Date(item.time_created || msgInfo.time).toISOString(),
+          userPrompt: item.text,
           assistantSummary: '',
           assistantResponse: '',
           tokens: { input: inTok, output: 0, total: inTok }
         };
         turns.push(currentTurn);
-      } else if (mData.role === 'assistant') {
+      } else if (!isUser) {
         if (!currentTurn && turns.length > 0) {
           currentTurn = turns[turns.length - 1];
         }
 
-        if (pData.type === 'text' && pData.text && currentTurn) {
-          const outTok = approximateTokens(pData.text);
-          currentTurn.assistantResponse = (currentTurn.assistantResponse ? currentTurn.assistantResponse + '\n\n' : '') + pData.text;
+        if (item.type === 'text' && item.text && currentTurn) {
+          const outTok = approximateTokens(item.text);
+          currentTurn.assistantResponse = (currentTurn.assistantResponse ? currentTurn.assistantResponse + '\n\n' : '') + item.text;
           currentTurn.assistantSummary = currentTurn.assistantResponse.slice(0, 300);
           currentTurn.tokens.output += outTok;
           currentTurn.tokens.total += outTok;
-        } else if (pData.type === 'step-finish' && pData.tokens && currentTurn) {
-          if (pData.tokens.input) currentTurn.tokens.input = pData.tokens.input;
-          if (pData.tokens.output) currentTurn.tokens.output = pData.tokens.output;
+        } else if (item.type === 'step-finish' && item.tokens && currentTurn) {
+          let tokenObj: any = {};
+          try { tokenObj = typeof item.tokens === 'string' ? JSON.parse(item.tokens) : item.tokens; } catch {}
+          if (tokenObj.input) currentTurn.tokens.input = tokenObj.input;
+          if (tokenObj.output) currentTurn.tokens.output = tokenObj.output;
           currentTurn.tokens.total = currentTurn.tokens.input + currentTurn.tokens.output;
         }
       }
