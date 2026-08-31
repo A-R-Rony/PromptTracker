@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+*.log
+.prompttracker
+.promptburn
+.DS_Store
+Thumbs.db
