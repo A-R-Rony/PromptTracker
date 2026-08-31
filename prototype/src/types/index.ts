@@ -10,6 +10,8 @@ export interface PromptTurn {
   timestamp: string;
   userPrompt: string;
   assistantSummary?: string;
+  assistantResponse?: string;
+  toolCalls?: Array<{ name: string; args?: any }>;
   tokens: TokenMetrics;
 }
 

@@ -27,13 +27,26 @@ export function exportSessionToMarkdown(session: NormalizedSession): string {
   for (const t of session.turns) {
     md += '## 🧑 Turn #' + t.turnIndex + ' (Developer)\n\n';
     md += '> **Input Tokens**: ' + t.tokens.input.toLocaleString() + ' | **Time**: ' + t.timestamp + '\n\n';
-    md += '`markdown\n' + t.userPrompt + '\n`\n\n';
+    md += '```markdown\n' + t.userPrompt + '\n```\n\n';
 
-    if (t.assistantSummary) {
+    const fullResponse = t.assistantResponse || t.assistantSummary;
+    if (fullResponse) {
       md += '### 🤖 Assistant Response\n\n';
       md += '> **Output Tokens**: ' + t.tokens.output.toLocaleString() + '\n\n';
-      md += t.assistantSummary + '\n\n';
+      md += fullResponse + '\n\n';
     }
+
+    if (t.toolCalls && t.toolCalls.length > 0) {
+      md += '<details>\n<summary>🛠️ <b>Tool Invocations (' + t.toolCalls.length + ')</b></summary>\n\n';
+      for (const tc of t.toolCalls) {
+        md += '- **' + tc.name + '**\n';
+        if (tc.args) {
+          md += '  ```json\n  ' + JSON.stringify(tc.args, null, 2).replace(/\n/g, '\n  ') + '\n  ```\n';
+        }
+      }
+      md += '\n</details>\n\n';
+    }
+
     md += '---\n\n';
   }
 

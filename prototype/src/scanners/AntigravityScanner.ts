@@ -74,6 +74,7 @@ export class AntigravityScanner implements ToolScanner {
                 if (turns.length > 0) {
                   const lastTurn = turns[turns.length - 1];
                   lastTurn.assistantSummary = responseContent.slice(0, 300);
+                  lastTurn.assistantResponse = responseContent;
                   lastTurn.tokens.output += outTok;
                   lastTurn.tokens.total += outTok;
                 }
@@ -81,6 +82,11 @@ export class AntigravityScanner implements ToolScanner {
 
               if (entry.tool_calls && Array.isArray(entry.tool_calls)) {
                 for (const tc of entry.tool_calls) {
+                  if (turns.length > 0) {
+                    const lastTurn = turns[turns.length - 1];
+                    if (!lastTurn.toolCalls) lastTurn.toolCalls = [];
+                    lastTurn.toolCalls.push({ name: tc.tool || tc.name || 'tool_call', args: tc.args });
+                  }
                   if (tc.args && tc.args.Cwd) {
                     detectedProjectPath = tc.args.Cwd;
                   } else if (tc.args && tc.args.TargetFile) {
