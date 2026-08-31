@@ -7,7 +7,7 @@ Create `packages/scanners` containing the `ScannerRegistry` and modular scanner 
 
 **Status:** ready-for-agent
 
-- [ ] Implement `AntigravityScanner` for `~/.gemini/antigravity-ide/brain/` with dynamic model name extraction (`model_name`, `entry.model`, `<USER_SETTINGS_CHANGE>`) and CWD detection.
-- [ ] Implement `ClaudeCodeScanner` for `~/.claude/` transcripts with dynamic model header parsing and exact token usage mapping.
-- [ ] Implement `CodexScanner`, `KiroScanner`, and `OpenCodeScanner` with dynamic model parsing.
-- [ ] Create test fixtures and unit tests verifying parsing accuracy and dynamic model detection across each scanner.
+- [x] Implement `AntigravityScanner` for `~/.gemini/antigravity-ide/brain/` with dynamic model name extraction (`model_name`, `entry.model`, `<USER_SETTINGS_CHANGE>`) and CWD detection.
+- [x] Implement `ClaudeCodeScanner` for `~/.claude/` transcripts with dynamic model header parsing and exact token usage mapping.
+- [x] Implement `CodexScanner`, `KiroScanner`, and `OpenCodeScanner` with dynamic model parsing.
+- [x] Create test fixtures and unit tests verifying parsing accuracy and dynamic model detection across each scanner.

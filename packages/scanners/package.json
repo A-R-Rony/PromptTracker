@@ -1,0 +1,18 @@
+{
+  "name": "@prompttracker/scanners",
+  "version": "0.1.0",
+  "description": "Pluggable transcript scanners for AI coding assistants (Antigravity, Claude Code, Codex, Kiro, OpenCode)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/**/*.test.js"
+  },
+  "dependencies": {
+    "@prompttracker/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "typescript": "^5.5.2"
+  }
+}
