@@ -3,6 +3,23 @@ import * as path from 'path';
 import * as os from 'os';
 import { NormalizedSession, PromptTurn, ToolScanner, approximateTokens, estimateCost } from '../../core/dist';
 
+function extractText(content: any): string {
+  if (!content) return '';
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content
+      .map(c => {
+        if (typeof c === 'string') return c;
+        if (c && typeof c.text === 'string') return c.text;
+        if (c && typeof c.content === 'string') return c.content;
+        return '';
+      })
+      .filter(Boolean)
+      .join('\n');
+  }
+  return JSON.stringify(content);
+}
+
 export class CodexScanner implements ToolScanner {
   readonly name = 'codex';
   private customBaseDir?: string;
@@ -13,20 +30,40 @@ export class CodexScanner implements ToolScanner {
 
   async scan(): Promise<NormalizedSession[]> {
     const sessions: NormalizedSession[] = [];
-    const codexDir = this.customBaseDir || path.join(os.homedir(), '.codex', 'sessions');
+    const codexDir = this.customBaseDir || path.join(os.homedir(), '.codex');
     const chatgptHistory = path.join(os.homedir(), '.chatgpt', 'history.json');
 
+    // 1. Scan .codex directory recursively (handles sessions/YYYY/MM/DD/*.jsonl and flat *.json)
     if (fs.existsSync(codexDir)) {
-      try {
-        const files = fs.readdirSync(codexDir);
-        for (const file of files) {
-          if (file.endsWith('.json')) {
-            this.parseCodexSession(path.join(codexDir, file), sessions);
+      const scanDir = (dir: string) => {
+        try {
+          const files = fs.readdirSync(dir);
+          for (const file of files) {
+            const fullPath = path.join(dir, file);
+            const stat = fs.statSync(fullPath);
+
+            if (stat.isDirectory()) {
+              if (!file.startsWith('.') || file === '.codex') {
+                scanDir(fullPath);
+              }
+            } else if (file.endsWith('.jsonl')) {
+              this.parseCodexJsonlSession(fullPath, sessions);
+            } else if (file.endsWith('.json') && !file.startsWith('.') && file !== 'config.json') {
+              this.parseCodexJsonSession(fullPath, sessions);
+            }
           }
-        }
-      } catch {}
+        } catch {}
+      };
+
+      const sessRoot = path.join(codexDir, 'sessions');
+      if (fs.existsSync(sessRoot)) {
+        scanDir(sessRoot);
+      } else {
+        scanDir(codexDir);
+      }
     }
 
+    // 2. Scan ChatGPT CLI history if present
     if (fs.existsSync(chatgptHistory)) {
       this.parseChatGPTFile(chatgptHistory, sessions);
     }
@@ -34,7 +71,89 @@ export class CodexScanner implements ToolScanner {
     return sessions;
   }
 
-  private parseCodexSession(filePath: string, sessions: NormalizedSession[]) {
+  private parseCodexJsonlSession(filePath: string, sessions: NormalizedSession[]) {
+    try {
+      const stats = fs.statSync(filePath);
+      const lines = fs.readFileSync(filePath, 'utf8').split('\n').filter(l => l.trim().length > 0);
+      const turns: PromptTurn[] = [];
+      let inTokTotal = 0;
+      let outTokTotal = 0;
+      let model = 'gpt-4o';
+      let detectedCwd = '';
+      let sessionTitle = '';
+      let sessionTimestamp = stats.mtime.toISOString();
+
+      let idx = 0;
+      for (const line of lines) {
+        try {
+          const item = JSON.parse(line);
+
+          if (item.type === 'session_meta' && item.payload) {
+            if (item.payload.cwd) detectedCwd = item.payload.cwd;
+            if (item.payload.timestamp) sessionTimestamp = item.payload.timestamp;
+          }
+
+          if (item.type === 'turn_context' && item.model) {
+            model = item.model.replace(/^(openai|google|anthropic)\//i, '').toLowerCase().replace(/\s+/g, '-');
+          }
+
+          if (item.type === 'response_item' && item.payload) {
+            const p = item.payload;
+            if (p.type === 'message') {
+              const text = extractText(p.content);
+              if (p.role === 'user') {
+                idx++;
+                const inTok = approximateTokens(text);
+                inTokTotal += inTok;
+                if (!sessionTitle) sessionTitle = text.slice(0, 30);
+
+                turns.push({
+                  turnIndex: idx,
+                  timestamp: item.timestamp || sessionTimestamp,
+                  userPrompt: text,
+                  assistantSummary: '',
+                  assistantResponse: '',
+                  tokens: { input: inTok, output: 0, total: inTok }
+                });
+              } else if (p.role === 'assistant') {
+                const outTok = approximateTokens(text);
+                outTokTotal += outTok;
+                if (turns.length > 0) {
+                  const last = turns[turns.length - 1];
+                  last.assistantSummary = text.slice(0, 300);
+                  last.assistantResponse = (last.assistantResponse ? last.assistantResponse + '\n\n' : '') + text;
+                  last.tokens.output += outTok;
+                  last.tokens.total += outTok;
+                }
+              }
+            }
+          }
+        } catch {}
+      }
+
+      if (turns.length > 0) {
+        const dateStr = sessionTimestamp.split('T')[0];
+        const totalTokens = { input: inTokTotal, output: outTokTotal, total: inTokTotal + outTokTotal };
+        const projectName = detectedCwd ? path.basename(detectedCwd) : (sessionTitle || path.basename(filePath, '.jsonl'));
+
+        sessions.push({
+          id: 'codex-' + path.basename(filePath, '.jsonl'),
+          toolSource: 'codex',
+          projectName,
+          projectPath: detectedCwd ? detectedCwd.replace(/\\/g, '/') : '',
+          timestamp: sessionTimestamp,
+          date: dateStr,
+          model,
+          turns,
+          totalTokens,
+          estimatedCostUsd: estimateCost(model, totalTokens),
+          rawFilePath: filePath
+        });
+      }
+    } catch {}
+  }
+
+  private parseCodexJsonSession(filePath: string, sessions: NormalizedSession[]) {
     try {
       const stats = fs.statSync(filePath);
       const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -50,7 +169,7 @@ export class CodexScanner implements ToolScanner {
       for (const msg of data.messages) {
         if (msg.role === 'user') {
           idx++;
-          const text = msg.content || '';
+          const text = extractText(msg.content);
           const inTok = approximateTokens(text);
           inTokTotal += inTok;
           turns.push({
@@ -61,7 +180,7 @@ export class CodexScanner implements ToolScanner {
             tokens: { input: inTok, output: 0, total: inTok }
           });
         } else if (msg.role === 'assistant') {
-          const text = msg.content || '';
+          const text = extractText(msg.content);
           const outTok = approximateTokens(text);
           outTokTotal += outTok;
           if (turns.length > 0) {
@@ -106,7 +225,7 @@ export class CodexScanner implements ToolScanner {
 
         const inTok = approximateTokens(item.prompt);
         const outTok = approximateTokens(item.response || '');
-        const model = item.model || 'gpt-4o';
+        const model = (item.model || 'gpt-4o').replace(/^(openai|google|anthropic)\//i, '').toLowerCase().replace(/\s+/g, '-');
         const dateStr = (item.date || stats.mtime.toISOString()).split('T')[0];
 
         sessions.push({
