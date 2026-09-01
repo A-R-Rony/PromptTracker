@@ -1,4 +1,4 @@
-import { NormalizedSession } from '../../core/dist';
+import { NormalizedSession } from '@prompttracker/core';
 
 export interface DateFilterOptions {
   date?: string;       // exact date 'YYYY-MM-DD'

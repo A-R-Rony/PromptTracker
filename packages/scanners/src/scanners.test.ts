@@ -84,4 +84,37 @@ describe('Scanners Engine (Dynamic Model & Session Extraction)', () => {
     assert.strictEqual(sessions[0].model, 'gpt-4o');
     assert.strictEqual(sessions[0].projectName, 'My-Codex-App');
   });
+
+  it('OpenCodeScanner marks exact provider telemetry vs calculated tokens', async () => {
+    const opencodeDir = path.join(tmpDir, 'opencode', 'sessions');
+    fs.mkdirSync(opencodeDir, { recursive: true });
+
+    const sessionData = {
+      model: 'glm-5.3',
+      project: 'OpenCode-Project',
+      prompts: [
+        {
+          text: 'Hello world prompt',
+          completion: 'Hello developer!',
+          inputTokens: 120,
+          outputTokens: 45
+        }
+      ]
+    };
+
+    fs.writeFileSync(path.join(opencodeDir, 'session-exact.json'), JSON.stringify(sessionData), 'utf8');
+
+    const scanner = new OpenCodeScanner(opencodeDir);
+    const sessions = await scanner.scan();
+
+    assert.strictEqual(sessions.length, 1);
+    const s = sessions[0];
+    assert.strictEqual(s.toolSource, 'opencode');
+    assert.strictEqual(s.totalTokens.input, 120);
+    assert.strictEqual(s.totalTokens.output, 45);
+    assert.strictEqual(s.totalTokens.isEstimated, false);
+    assert.strictEqual(s.totalTokens.source, 'provider_telemetry');
+    assert.strictEqual(s.turns[0].tokens.isEstimated, false);
+    assert.strictEqual(s.turns[0].tokens.source, 'provider_telemetry');
+  });
 });

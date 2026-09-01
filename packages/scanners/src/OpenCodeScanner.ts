@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { execSync } from 'child_process';
-import { NormalizedSession, PromptTurn, ToolScanner, approximateTokens, estimateCost } from '../../core/dist';
+import { NormalizedSession, PromptTurn, ToolScanner, TokenSource, approximateTokens, estimateCost } from '../../core/dist';
 
 export class OpenCodeScanner implements ToolScanner {
   readonly name = 'opencode';
@@ -118,9 +118,24 @@ export class OpenCodeScanner implements ToolScanner {
         const sessionParts = partsBySession[row.id] || [];
         const turns = this.processPartsIntoTurns(sessionParts, msgRoleMap, timestamp);
 
-        const inTok = row.tokens_input || turns.reduce((acc, t) => acc + t.tokens.input, 0);
-        const outTok = row.tokens_output || turns.reduce((acc, t) => acc + t.tokens.output, 0);
-        const totalTokens = { input: inTok, output: outTok, total: inTok + outTok };
+        const hasExactTelemetry = typeof row.tokens_input === 'number' && typeof row.tokens_output === 'number' && (row.tokens_input > 0 || row.tokens_output > 0);
+        const inTok = hasExactTelemetry ? row.tokens_input : turns.reduce((acc, t) => acc + t.tokens.input, 0);
+        const outTok = hasExactTelemetry ? row.tokens_output : turns.reduce((acc, t) => acc + t.tokens.output, 0);
+        const reasoningTok = typeof row.tokens_reasoning === 'number' ? row.tokens_reasoning : turns.reduce((acc, t) => acc + (t.tokens.reasoning || 0), 0);
+        const cachedTok = turns.reduce((acc, t) => acc + (t.tokens.cached || 0), 0);
+
+        const isEstimated = !hasExactTelemetry && turns.some(t => t.tokens.isEstimated);
+        const source: TokenSource = hasExactTelemetry ? 'provider_telemetry' : (isEstimated ? 'estimated_heuristic' : 'provider_telemetry');
+
+        const totalTokens = {
+          input: inTok,
+          output: outTok,
+          reasoning: reasoningTok > 0 ? reasoningTok : undefined,
+          cached: cachedTok > 0 ? cachedTok : undefined,
+          total: inTok + outTok + (reasoningTok > 0 ? reasoningTok : 0),
+          isEstimated,
+          source
+        };
         const cost = typeof row.cost === 'number' && row.cost > 0 ? +row.cost.toFixed(4) : estimateCost(cleanModel, totalTokens);
 
         sessions.push({
@@ -160,7 +175,7 @@ export class OpenCodeScanner implements ToolScanner {
           userPrompt: item.text,
           assistantSummary: '',
           assistantResponse: '',
-          tokens: { input: inTok, output: 0, total: inTok }
+          tokens: { input: inTok, output: 0, total: inTok, isEstimated: true, source: 'estimated_heuristic' }
         };
         turns.push(currentTurn);
       } else if (!isUser) {
@@ -172,14 +187,27 @@ export class OpenCodeScanner implements ToolScanner {
           const outTok = approximateTokens(item.text);
           currentTurn.assistantResponse = (currentTurn.assistantResponse ? currentTurn.assistantResponse + '\n\n' : '') + item.text;
           currentTurn.assistantSummary = currentTurn.assistantResponse.slice(0, 300);
-          currentTurn.tokens.output += outTok;
-          currentTurn.tokens.total += outTok;
+          if (currentTurn.tokens.isEstimated !== false) {
+            currentTurn.tokens.output += outTok;
+            currentTurn.tokens.total += outTok;
+          }
         } else if (item.type === 'step-finish' && item.tokens && currentTurn) {
           let tokenObj: any = {};
           try { tokenObj = typeof item.tokens === 'string' ? JSON.parse(item.tokens) : item.tokens; } catch {}
-          if (tokenObj.input) currentTurn.tokens.input = tokenObj.input;
-          if (tokenObj.output) currentTurn.tokens.output = tokenObj.output;
-          currentTurn.tokens.total = currentTurn.tokens.input + currentTurn.tokens.output;
+          if (typeof tokenObj.input === 'number' || typeof tokenObj.output === 'number') {
+            const inCount = tokenObj.input || 0;
+            const outCount = tokenObj.output || 0;
+            const reasoningCount = tokenObj.reasoning || 0;
+            const cacheRead = (tokenObj.cache && tokenObj.cache.read) || tokenObj.cache_read || 0;
+            
+            currentTurn.tokens.input = inCount;
+            currentTurn.tokens.output = outCount;
+            if (reasoningCount > 0) currentTurn.tokens.reasoning = reasoningCount;
+            if (cacheRead > 0) currentTurn.tokens.cached = cacheRead;
+            currentTurn.tokens.total = inCount + outCount + reasoningCount;
+            currentTurn.tokens.isEstimated = false;
+            currentTurn.tokens.source = 'provider_telemetry';
+          }
         }
       }
     }
@@ -189,7 +217,7 @@ export class OpenCodeScanner implements ToolScanner {
         turnIndex: 1,
         timestamp: fallbackTime,
         userPrompt: 'OpenCode session executed in workspace',
-        tokens: { input: 100, output: 100, total: 200 }
+        tokens: { input: 100, output: 100, total: 200, isEstimated: true, source: 'estimated_heuristic' }
       });
     }
 
@@ -206,12 +234,16 @@ export class OpenCodeScanner implements ToolScanner {
       let inTokTotal = 0;
       let outTokTotal = 0;
       let model = data.model || 'glm-5.3';
+      let anyEstimated = false;
 
       let idx = 0;
       for (const p of data.prompts) {
         idx++;
-        const inTok = p.inputTokens || approximateTokens(p.text || '');
-        const outTok = p.outputTokens || approximateTokens(p.completion || '');
+        const hasNative = typeof p.inputTokens === 'number' && typeof p.outputTokens === 'number';
+        const inTok = hasNative ? p.inputTokens : approximateTokens(p.text || '');
+        const outTok = hasNative ? p.outputTokens : approximateTokens(p.completion || '');
+        if (!hasNative) anyEstimated = true;
+
         inTokTotal += inTok;
         outTokTotal += outTok;
 
@@ -221,13 +253,25 @@ export class OpenCodeScanner implements ToolScanner {
           userPrompt: p.text || '',
           assistantSummary: (p.completion || '').slice(0, 300),
           assistantResponse: p.completion,
-          tokens: { input: inTok, output: outTok, total: inTok + outTok }
+          tokens: {
+            input: inTok,
+            output: outTok,
+            total: inTok + outTok,
+            isEstimated: !hasNative,
+            source: hasNative ? 'provider_telemetry' : 'estimated_heuristic'
+          }
         });
       }
 
       if (turns.length > 0) {
         const dateStr = (data.createdAt || stats.mtime.toISOString()).split('T')[0];
-        const totalTokens = { input: inTokTotal, output: outTokTotal, total: inTokTotal + outTokTotal };
+        const totalTokens = {
+          input: inTokTotal,
+          output: outTokTotal,
+          total: inTokTotal + outTokTotal,
+          isEstimated: anyEstimated,
+          source: (anyEstimated ? 'estimated_heuristic' : 'provider_telemetry') as TokenSource
+        };
 
         sessions.push({
           id: 'opencode-' + path.basename(filePath, '.json'),

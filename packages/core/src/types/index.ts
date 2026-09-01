@@ -1,8 +1,13 @@
+export type TokenSource = 'provider_telemetry' | 'calculated_tokenizer' | 'estimated_heuristic';
+
 export interface TokenMetrics {
   input: number;
   output: number;
   cached?: number;
+  reasoning?: number;
   total: number;
+  isEstimated?: boolean;
+  source?: TokenSource;
 }
 
 export interface PromptTurn {

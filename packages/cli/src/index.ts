@@ -1,3 +1,3 @@
-export { exportSessionToMarkdown } from '../../core/dist';
-export * from './dateFilter';
-export * from './cli';
+export { exportSessionToMarkdown } from '@prompttracker/core';
+export * from './dateFilter.js';
+export * from './cli.js';

@@ -3,8 +3,8 @@ import assert from 'node:assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { NormalizedSession, exportSessionToMarkdown } from '../../core/dist';
-import { filterSessionsByDate, parseRelativeDate } from './dateFilter';
+import { NormalizedSession, exportSessionToMarkdown } from '@prompttracker/core';
+import { filterSessionsByDate, parseRelativeDate } from './dateFilter.js';
 
 describe('CLI Package Utilities', () => {
   const sampleSessions: NormalizedSession[] = [
