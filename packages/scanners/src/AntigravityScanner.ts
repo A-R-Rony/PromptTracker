@@ -113,7 +113,13 @@ export class AntigravityScanner implements ToolScanner {
                   timestamp: entry.created_at || entry.timestamp || sessionTimestamp,
                   userPrompt: cleanedPrompt || rawContent.slice(0, 300),
                   assistantSummary: '',
-                  tokens: { input: inTok, output: 0, total: inTok }
+                  tokens: {
+                    input: inTok,
+                    output: 0,
+                    total: inTok,
+                    isEstimated: true,
+                    source: 'estimated_heuristic'
+                  }
                 });
               } else if (entry.type === 'PLANNER_RESPONSE' || entry.source === 'MODEL') {
                 const responseContent = typeof entry.content === 'string' ? entry.content : JSON.stringify(entry.content || '');
@@ -126,6 +132,8 @@ export class AntigravityScanner implements ToolScanner {
                   lastTurn.assistantResponse = responseContent;
                   lastTurn.tokens.output += outTok;
                   lastTurn.tokens.total += outTok;
+                  lastTurn.tokens.isEstimated = true;
+                  lastTurn.tokens.source = 'estimated_heuristic';
                 }
               }
 
@@ -151,7 +159,9 @@ export class AntigravityScanner implements ToolScanner {
             const totalTokens = {
               input: inputTokensTotal,
               output: outputTokensTotal,
-              total: inputTokensTotal + outputTokensTotal
+              total: inputTokensTotal + outputTokensTotal,
+              isEstimated: true,
+              source: 'estimated_heuristic' as const
             };
 
             const firstPromptClean = turns[0]?.userPrompt.slice(0, 40).replace(/\n/g, ' ') || ('conv-' + convId.slice(0, 8));

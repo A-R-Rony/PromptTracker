@@ -86,7 +86,8 @@ export class ClaudeCodeScanner implements ToolScanner {
           if (item.type === 'user_message' || item.role === 'user' || item.prompt) {
             idx++;
             const text = extractText(item.prompt || item.text || item.content || '');
-            const inTok = item.usage?.input_tokens || approximateTokens(text);
+            const hasExactIn = typeof item.usage?.input_tokens === 'number';
+            const inTok = hasExactIn ? item.usage.input_tokens : approximateTokens(text);
             inTokTotal += inTok;
 
             turns.push({
@@ -95,11 +96,18 @@ export class ClaudeCodeScanner implements ToolScanner {
               userPrompt: text,
               assistantSummary: '',
               assistantResponse: '',
-              tokens: { input: inTok, output: 0, total: inTok }
+              tokens: {
+                input: inTok,
+                output: 0,
+                total: inTok,
+                isEstimated: !hasExactIn,
+                source: hasExactIn ? 'provider_telemetry' : 'estimated_heuristic'
+              }
             });
           } else if (item.type === 'assistant_message' || item.role === 'assistant' || item.response) {
             const text = extractText(item.response || item.text || item.content || '');
-            const outTok = item.usage?.output_tokens || approximateTokens(text);
+            const hasExactOut = typeof item.usage?.output_tokens === 'number';
+            const outTok = hasExactOut ? item.usage.output_tokens : approximateTokens(text);
             outTokTotal += outTok;
             if (turns.length > 0) {
               const last = turns[turns.length - 1];
@@ -107,6 +115,10 @@ export class ClaudeCodeScanner implements ToolScanner {
               last.assistantResponse = (last.assistantResponse ? last.assistantResponse + '\n\n' : '') + text;
               last.tokens.output += outTok;
               last.tokens.total += outTok;
+              if (hasExactOut) {
+                last.tokens.isEstimated = false;
+                last.tokens.source = 'provider_telemetry';
+              }
             }
           }
         } catch {}
@@ -114,7 +126,14 @@ export class ClaudeCodeScanner implements ToolScanner {
 
       if (turns.length > 0) {
         const dateStr = stats.mtime.toISOString().split('T')[0];
-        const totalTokens = { input: inTokTotal, output: outTokTotal, total: inTokTotal + outTokTotal };
+        const isEstimated = turns.some(t => t.tokens.isEstimated);
+        const totalTokens = {
+          input: inTokTotal,
+          output: outTokTotal,
+          total: inTokTotal + outTokTotal,
+          isEstimated,
+          source: isEstimated ? ('estimated_heuristic' as const) : ('provider_telemetry' as const)
+        };
         const projectName = detectedCwd ? path.basename(detectedCwd) : path.basename(path.dirname(filePath));
 
         sessions.push({

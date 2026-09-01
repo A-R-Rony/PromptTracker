@@ -56,7 +56,7 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
             </Text>
             <Text color="gray">{'│ '}</Text>
             <Text color="cyanBright" bold>
-              {`${session.totalTokens.total.toLocaleString()} tokens`}
+              {`${session.totalTokens.isEstimated ? 'Est. ' : ''}${session.totalTokens.total.toLocaleString()} tokens`}
             </Text>
           </Box>
         </Box>
@@ -91,6 +91,10 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
           visibleTurns.map((turn) => {
             const inTokens = turn.tokens?.input || 0;
             const outTokens = turn.tokens?.output || 0;
+            const isEst = turn.tokens?.isEstimated;
+            const tokenBadge = isEst
+              ? `(Est. ${inTokens.toLocaleString()} in / Est. ${outTokens.toLocaleString()} out)`
+              : `(${inTokens.toLocaleString()} in / ${outTokens.toLocaleString()} out)`;
             const responseText = cleanSingleLine(
               turn.assistantResponse || turn.assistantSummary || '',
               130
@@ -117,8 +121,8 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
                       {cleanSingleLine(turn.userPrompt, 110)}
                     </Text>
                   </Box>
-                  <Text color="gray">
-                    {`(${inTokens.toLocaleString()} in / ${outTokens.toLocaleString()} out)`}
+                  <Text color={isEst ? 'yellow' : 'gray'}>
+                    {tokenBadge}
                   </Text>
                 </Box>
 

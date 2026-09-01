@@ -32,6 +32,9 @@ describe('Scanners Engine (Dynamic Model & Session Extraction)', () => {
     assert.strictEqual(s.projectName, 'Build scanner engine');
     assert.strictEqual(s.projectPath, 'd:/Projects/App');
     assert.strictEqual(s.model, 'gemini-3.7-flash');
+    assert.strictEqual(s.totalTokens.isEstimated, true);
+    assert.strictEqual(s.totalTokens.source, 'estimated_heuristic');
+    assert.strictEqual(s.turns[0].tokens.isEstimated, true);
     assert.strictEqual(s.turns.length, 1);
     assert.strictEqual(s.turns[0].userPrompt, 'Build scanner engine');
     assert.strictEqual(s.turns[0].assistantResponse, 'Creating scanner modules now.');

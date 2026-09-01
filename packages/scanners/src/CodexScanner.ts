@@ -103,7 +103,8 @@ export class CodexScanner implements ToolScanner {
               const text = extractText(p.content);
               if (p.role === 'user') {
                 idx++;
-                const inTok = approximateTokens(text);
+                const hasExact = typeof p.usage?.input_tokens === 'number';
+                const inTok = hasExact ? p.usage.input_tokens : approximateTokens(text);
                 inTokTotal += inTok;
                 if (!sessionTitle) sessionTitle = text.slice(0, 30);
 
@@ -113,10 +114,17 @@ export class CodexScanner implements ToolScanner {
                   userPrompt: text,
                   assistantSummary: '',
                   assistantResponse: '',
-                  tokens: { input: inTok, output: 0, total: inTok }
+                  tokens: {
+                    input: inTok,
+                    output: 0,
+                    total: inTok,
+                    isEstimated: !hasExact,
+                    source: hasExact ? 'provider_telemetry' : 'estimated_heuristic'
+                  }
                 });
               } else if (p.role === 'assistant') {
-                const outTok = approximateTokens(text);
+                const hasExact = typeof p.usage?.output_tokens === 'number';
+                const outTok = hasExact ? p.usage.output_tokens : approximateTokens(text);
                 outTokTotal += outTok;
                 if (turns.length > 0) {
                   const last = turns[turns.length - 1];
@@ -124,6 +132,10 @@ export class CodexScanner implements ToolScanner {
                   last.assistantResponse = (last.assistantResponse ? last.assistantResponse + '\n\n' : '') + text;
                   last.tokens.output += outTok;
                   last.tokens.total += outTok;
+                  if (hasExact) {
+                    last.tokens.isEstimated = false;
+                    last.tokens.source = 'provider_telemetry';
+                  }
                 }
               }
             }
@@ -133,7 +145,14 @@ export class CodexScanner implements ToolScanner {
 
       if (turns.length > 0) {
         const dateStr = sessionTimestamp.split('T')[0];
-        const totalTokens = { input: inTokTotal, output: outTokTotal, total: inTokTotal + outTokTotal };
+        const isEstimated = turns.some(t => t.tokens.isEstimated);
+        const totalTokens = {
+          input: inTokTotal,
+          output: outTokTotal,
+          total: inTokTotal + outTokTotal,
+          isEstimated,
+          source: isEstimated ? ('estimated_heuristic' as const) : ('provider_telemetry' as const)
+        };
         const projectName = detectedCwd ? path.basename(detectedCwd) : (sessionTitle || path.basename(filePath, '.jsonl'));
 
         sessions.push({
@@ -170,18 +189,26 @@ export class CodexScanner implements ToolScanner {
         if (msg.role === 'user') {
           idx++;
           const text = extractText(msg.content);
-          const inTok = approximateTokens(text);
+          const hasExact = typeof msg.tokens?.input === 'number' || typeof msg.input_tokens === 'number';
+          const inTok = hasExact ? (msg.tokens?.input || msg.input_tokens) : approximateTokens(text);
           inTokTotal += inTok;
           turns.push({
             turnIndex: idx,
             timestamp: msg.timestamp || stats.mtime.toISOString(),
             userPrompt: text,
             assistantSummary: '',
-            tokens: { input: inTok, output: 0, total: inTok }
+            tokens: {
+              input: inTok,
+              output: 0,
+              total: inTok,
+              isEstimated: !hasExact,
+              source: hasExact ? 'provider_telemetry' : 'estimated_heuristic'
+            }
           });
         } else if (msg.role === 'assistant') {
           const text = extractText(msg.content);
-          const outTok = approximateTokens(text);
+          const hasExact = typeof msg.tokens?.output === 'number' || typeof msg.output_tokens === 'number';
+          const outTok = hasExact ? (msg.tokens?.output || msg.output_tokens) : approximateTokens(text);
           outTokTotal += outTok;
           if (turns.length > 0) {
             const last = turns[turns.length - 1];
@@ -189,13 +216,24 @@ export class CodexScanner implements ToolScanner {
             last.assistantResponse = text;
             last.tokens.output += outTok;
             last.tokens.total += outTok;
+            if (hasExact) {
+              last.tokens.isEstimated = false;
+              last.tokens.source = 'provider_telemetry';
+            }
           }
         }
       }
 
       if (turns.length > 0) {
         const dateStr = stats.mtime.toISOString().split('T')[0];
-        const totalTokens = { input: inTokTotal, output: outTokTotal, total: inTokTotal + outTokTotal };
+        const isEstimated = turns.some(t => t.tokens.isEstimated);
+        const totalTokens = {
+          input: inTokTotal,
+          output: outTokTotal,
+          total: inTokTotal + outTokTotal,
+          isEstimated,
+          source: isEstimated ? ('estimated_heuristic' as const) : ('provider_telemetry' as const)
+        };
 
         sessions.push({
           id: 'codex-' + path.basename(filePath, '.json'),
@@ -223,8 +261,11 @@ export class CodexScanner implements ToolScanner {
         const item = data[i];
         if (!item.prompt) continue;
 
-        const inTok = approximateTokens(item.prompt);
-        const outTok = approximateTokens(item.response || '');
+        const hasExactIn = typeof item.tokens?.input === 'number';
+        const hasExactOut = typeof item.tokens?.output === 'number';
+        const inTok = hasExactIn ? item.tokens.input : approximateTokens(item.prompt);
+        const outTok = hasExactOut ? item.tokens.output : approximateTokens(item.response || '');
+        const isEstimated = !hasExactIn || !hasExactOut;
         const model = (item.model || 'gpt-4o').replace(/^(openai|google|anthropic)\//i, '').toLowerCase().replace(/\s+/g, '-');
         const dateStr = (item.date || stats.mtime.toISOString()).split('T')[0];
 
@@ -242,10 +283,22 @@ export class CodexScanner implements ToolScanner {
               userPrompt: item.prompt,
               assistantSummary: (item.response || '').slice(0, 300),
               assistantResponse: item.response,
-              tokens: { input: inTok, output: outTok, total: inTok + outTok }
+              tokens: {
+                input: inTok,
+                output: outTok,
+                total: inTok + outTok,
+                isEstimated,
+                source: isEstimated ? 'estimated_heuristic' : 'provider_telemetry'
+              }
             }
           ],
-          totalTokens: { input: inTok, output: outTok, total: inTok + outTok },
+          totalTokens: {
+            input: inTok,
+            output: outTok,
+            total: inTok + outTok,
+            isEstimated,
+            source: isEstimated ? 'estimated_heuristic' : 'provider_telemetry'
+          },
           estimatedCostUsd: estimateCost(model, { input: inTok, output: outTok, total: inTok + outTok }),
           rawFilePath: filePath
         });

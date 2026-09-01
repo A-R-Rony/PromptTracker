@@ -87,8 +87,10 @@ export class KiroScanner implements ToolScanner {
 
             if (userText) {
               idx++;
-              const inTok = h.inputTokens || h.tokens?.input || approximateTokens(userText);
-              const outTok = h.outputTokens || h.tokens?.output || (asstText ? approximateTokens(asstText) : 0);
+              const hasExactIn = typeof (h.inputTokens || h.tokens?.input) === 'number';
+              const inTok = hasExactIn ? (h.inputTokens || h.tokens?.input) : approximateTokens(userText);
+              const hasExactOut = typeof (h.outputTokens || h.tokens?.output) === 'number';
+              const outTok = hasExactOut ? (h.outputTokens || h.tokens?.output) : (asstText ? approximateTokens(asstText) : 0);
               inTokTotal += inTok;
               outTokTotal += outTok;
 
@@ -98,23 +100,41 @@ export class KiroScanner implements ToolScanner {
                 userPrompt: userText,
                 assistantSummary: asstText.slice(0, 300),
                 assistantResponse: asstText,
-                tokens: { input: inTok, output: outTok, total: inTok + outTok }
+                tokens: {
+                  input: inTok,
+                  output: outTok,
+                  total: inTok + outTok,
+                  isEstimated: !hasExactIn || !hasExactOut,
+                  source: (hasExactIn && hasExactOut) ? 'provider_telemetry' : 'estimated_heuristic'
+                }
               });
             } else if (asstText && turns.length > 0) {
               const last = turns[turns.length - 1];
-              const outTok = h.outputTokens || h.tokens?.output || approximateTokens(asstText);
+              const hasExactOut = typeof (h.outputTokens || h.tokens?.output) === 'number';
+              const outTok = hasExactOut ? (h.outputTokens || h.tokens?.output) : approximateTokens(asstText);
               outTokTotal += outTok;
               last.assistantSummary = asstText.slice(0, 300);
               last.assistantResponse = (last.assistantResponse ? last.assistantResponse + '\n\n' : '') + asstText;
               last.tokens.output += outTok;
               last.tokens.total += outTok;
+              if (hasExactOut) {
+                last.tokens.isEstimated = false;
+                last.tokens.source = 'provider_telemetry';
+              }
             }
           }
         }
 
         if (turns.length > 0) {
           const dateStr = (sess.createdAt || sess.timestamp || stats.mtime.toISOString()).split('T')[0];
-          const totalTokens = { input: inTokTotal, output: outTokTotal, total: inTokTotal + outTokTotal };
+          const isEstimated = turns.some(t => t.tokens.isEstimated);
+          const totalTokens = {
+            input: inTokTotal,
+            output: outTokTotal,
+            total: inTokTotal + outTokTotal,
+            isEstimated,
+            source: isEstimated ? ('estimated_heuristic' as const) : ('provider_telemetry' as const)
+          };
           const wsName = path.basename(path.dirname(filePath));
           const projectName = sess.name || sess.title || sess.projectName || wsName;
           const detectedCwd = sess.projectPath || sess.cwd || sess.workspacePath || '';

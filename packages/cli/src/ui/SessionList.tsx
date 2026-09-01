@@ -86,7 +86,9 @@ export const SessionList: React.FC<SessionListProps> = ({
         const truncatedSummary =
           fullTitle.length > 55 ? fullTitle.slice(0, 52) + '...' : fullTitle.padEnd(55);
 
-        const tokenText = `${session.totalTokens.total.toLocaleString()} tok`;
+        const isEst = session.totalTokens.isEstimated;
+        const tokenPrefix = isEst ? 'Est. ' : '';
+        const tokenText = `${tokenPrefix}${session.totalTokens.total.toLocaleString()} tok`;
         const costText = `$${session.estimatedCostUsd.toFixed(4)}`;
 
         return (

@@ -1,142 +1,158 @@
-# 🔥 PromptTracker
+# 🔍 PromptLens (`prompt-lens`)
 
 > **Universal AI Coding Prompt & Token Usage Telemetry Tracker**  
-> Automatically aggregate, analyze, and visualize prompt history, token burn, model costs, and conversation transcripts across Google Antigravity, Claude Code, OpenAI Codex, Kiro IDE, and OpenCode.
+> Automatically aggregate, analyze, search, and navigate prompt history, token burn, model costs, and conversation transcripts across Google Antigravity, Anthropic Claude Code, OpenAI Codex, Kiro IDE, and OpenCode in a modern terminal UI.
 
 [![CI](https://github.com/A-R-Rony/PromptTracker/actions/workflows/ci.yml/badge.svg)](https://github.com/A-R-Rony/PromptTracker/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/prompttracker.svg)](https://www.npmjs.com/package/prompttracker)
+[![npm version](https://img.shields.io/npm/v/prompt-lens.svg)](https://www.npmjs.com/package/prompt-lens)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ---
 
 ## ⚡ Quick Start
 
-Run instantly without installation:
+Run instantly with zero installation:
 ```bash
-npx prompttracker
+npx prompt-lens
 ```
 
 Or install globally:
 ```bash
-npm install -g prompttracker
+npm install -g prompt-lens
 ```
 
-Launch the interactive Web Dashboard:
+Launch the interactive Terminal User Interface (TUI):
 ```bash
-prompttracker ui
+prompt-lens
+# Aliases also supported: promptlens or prompttracker
 ```
 
 ---
 
 ## ✨ Features
 
-- **Multi-Tool Pluggable Scanners**: Automatically discovers and aggregates sessions from:
+- **Terminal-First Interactive TUI**: Built with React & Ink for a modern full-width developer experience with instant hotkeys and smooth navigation.
+- **Multi-Tool Pluggable Scanners**: Automatically discovers and indexes AI sessions from:
   - 🤖 **Google Antigravity IDE** (`~/.gemini/antigravity-ide/brain/`)
   - 🟣 **Anthropic Claude Code** (`~/.claude/`)
   - 🟢 **OpenAI Codex / ChatGPT CLI** (`~/.codex/`, `~/.chatgpt/`)
   - 🟡 **Kiro IDE** (`~/.kiro/workspaces/`)
-  - 🔴 **OpenCode** (`~/.opencode/sessions/`)
-- **Dynamic 24h Model Pricing**: Non-blocking background sync with the **OpenRouter Live Model Registry** (`https://openrouter.ai/api/v1/models`) supporting 300+ models with zero-downtime offline fallback.
-- **Strict 50MB RAM Ceiling & Disk Spillover**: Enforces a tight memory footprint with lazy rehydration on demand.
-- **Smart Directory Scoping**: Automatically detects your current working directory and filters sessions to the active repository.
-- **Date Filtering**: Slice telemetry by exact dates (`--date 2026-08-31`), relative horizons (`--since 7d`, `--since 30d`), or interactive TUI presets (*Today*, *Yesterday*, *Last 7 Days*, *Last 30 Days*, *Custom*).
-- **Full Un-truncated Transcripts**: Export Markdown conversations with collapsible `<details>` tool invocations and 1-click IDE launch.
-- **Modern Glassmorphic Web Dashboard**: Built with React + Vite featuring real-time KPIs, daily spend bar charts, spend-by-model progress bars, and split-screen conversation explorer.
+  - 🔴 **OpenCode** (`~/.local/share/opencode/opencode.db` and legacy `~/.opencode/sessions/`)
+- **Accurate Model Tokens & Telemetry**: Distinguishes exact hardware telemetry from heuristic calculations with `Est.` indicators.
+- **Strict 50MB RAM Threshold with Disk Spillover**: Guarantees lightweight CLI operation even with hundreds of megabytes of conversation logs.
+- **Smart Directory Scoping**: Automatically scopes sessions to the active repository (including monorepo subfolders) with 1-key machine-wide toggle (`a`).
+- **Instant Date Filter Pills**: Instant hotkeys (`1-5`) for *Today*, *Yesterday*, *Last 7 Days*, *Last 30 Days*, and *All Time*.
+- **1-Click IDE Markdown Exporter**: Inspect turns in-terminal and press `Enter` or `o` to pop open the full formatted transcript in VS Code / default editor.
 
 ---
 
-## 💻 CLI Command Reference
+## 💻 CLI Commands & Subcommands
 
-### 1. Default Project Scoping (Smart CWD)
-When run without flags, `prompttracker` automatically inspects your **Current Working Directory (CWD)** and filters sessions to the active repository (including monorepo subfolders like `packages/` or `src/`):
+### 1. Interactive Terminal UI (Default)
 ```bash
-# Scan sessions for the current project
-prompttracker
+# Launch interactive TUI scoped to current project
+prompt-lens
+
+# Launch interactive TUI for all projects machine-wide
+prompt-lens -a
 ```
 
-### 2. Machine-Wide Global View (`-a, --all`)
-To view all AI coding sessions recorded across all repositories and directories on your computer:
+#### TUI Hotkeys:
+| Key | Screen | Action |
+| :--- | :--- | :--- |
+| `↑` / `↓` or `j` / `k` | List & Detail | Scroll through sessions or conversation turns |
+| `Enter` | Sessions List | Open selected session conversation turns |
+| `Enter` / `o` | Detail View | Launch full conversation `.md` in VS Code / IDE |
+| `1` - `5` | Sessions List | Instant date filter presets (`1: Today`, `2: Yesterday`, `3: 7D`, `4: 30D`, `5: All`) |
+| `a` | Sessions List | Toggle between current project scope and global filesystem |
+| `/` | Sessions List | Open live search filter |
+| `b` / `Esc` | Detail View | Return back to Sessions List |
+| `q` | Anywhere | Quit PromptLens |
+
+---
+
+### 2. Telemetry Analytics (`stats`)
+Get an immediate breakdown of token burn, prompt count, and estimated cost grouped by tool source and model:
 ```bash
-# Scan everything across your entire filesystem
-prompttracker --all
-```
+# Stats for current project
+prompt-lens stats
 
-### 3. Date & Time Filtering (`--date`, `--since`, `--until`)
-Slice and dice your prompt telemetry by exact calendar dates or relative horizons:
-```bash
-# View today's prompt activity
-prompttracker --date today
-
-# View yesterday's activity across all projects
-prompttracker --all --date yesterday
-
-# View activity from the last 7 or 30 days
-prompttracker --since 7d
-prompttracker --since 30d
-
-# Custom date range (e.g. August 2026)
-prompttracker --since 2026-08-01 --until 2026-08-31
-```
-
-### 4. Explicit Project Filtering (`-p, --project <name>`)
-Search sessions matching a specific project name or folder substring:
-```bash
-# Filter by project name
-prompttracker --project LeetCode
-prompttracker --project PromptTracker
-```
-
-### 5. Script & CI Automation (`-n, --no-interactive`)
-Output telemetry cards directly to stdout without launching the interactive prompt selector:
-```bash
-# Clean summary output for scripts or logs
-prompttracker --no-interactive
-prompttracker --all --since 7d --no-interactive
+# Stats machine-wide across all projects
+prompt-lens stats -a
 ```
 
 ---
 
-### 📋 CLI Options Quick Reference Table
-
-| Option | Shorthand | Description | Example |
-| :--- | :--- | :--- | :--- |
-| `[default]` | — | Smart CWD: Auto-filters to active project folder | `prompttracker` |
-| `--all` | `-a` | Global scan across entire filesystem | `prompttracker -a` |
-| `--project <name>`| `-p` | Filter sessions by project name or directory path | `prompttracker -p LeetCode` |
-| `--date <date>` | `-d` | Filter by exact date or preset (`today`, `yesterday`, `YYYY-MM-DD`) | `prompttracker -d today` |
-| `--since <val>` | — | Filter on or after relative interval (`7d`, `30d`) or date | `prompttracker --since 7d` |
-| `--until <val>` | — | Filter up to specific date (`YYYY-MM-DD`) | `prompttracker --until 2026-08-31` |
-| `--no-interactive`| `-n` | Print summary cards without interactive TUI | `prompttracker -n` |
-| `--help` | `-h` | Display all available commands and flags | `prompttracker --help` |
+### 3. Fast Prompt & Response Search (`search`)
+Search across all user prompts and assistant completions:
+```bash
+prompt-lens search "database migration"
+prompt-lens search "refactor" -a
+```
 
 ---
 
-## 🏗️ Monorepo Architecture
+### 4. Tabular List & Scripting (`list`)
+Export or pipe session telemetry directly into CLI scripts or `jq`:
+```bash
+# Clean ASCII table
+prompt-lens list
+
+# Raw JSON output
+prompt-lens list --json | jq .
+```
+
+---
+
+### 5. Session Export (`export`)
+Export a session transcript to formatted Markdown or JSON:
+```bash
+# Export latest session to Markdown
+prompt-lens export
+
+# Export specific session to a target file
+prompt-lens export <sessionId> --format md --out ./session-summary.md
+prompt-lens export <sessionId> --format json --out ./session.json
+```
+
+---
+
+## 🧠 Why Do We Track RAM Memory (50MB Threshold)?
+
+When indexing developers' local coding assistants (like Antigravity, OpenCode, Claude Code, and Codex), conversation logs accumulate **hundreds of megabytes of raw JSON/JSONL transcripts** with large code completions and tool call payloads.
+
+Loading all historical sessions into Node.js heap memory at once would cause high memory usage, sluggish terminal response, or `JavaScript heap out of memory` errors.
+
+To solve this, `prompt-lens` employs a **50MB RAM Threshold with Disk Spillover**:
+1. **Lightweight In-Memory Index**: Session headers, token counts, and 1-line summaries are kept in RAM for instant search and instant UI sorting.
+2. **Disk Spillover**: When memory consumption approaches the 50MB ceiling, heavy turn bodies and multiline responses are spilled to a local cache directory (`~/.prompttracker/cache/`).
+3. **Lazy Rehydration**: When you select a session to inspect or export, full turn details are streamed lazily from disk in milliseconds without ever consuming excess RAM.
+
+This keeps `prompt-lens` lightning fast (<100ms startup) with a negligible memory footprint.
+
+---
+
+## 🏗️ Architecture
 
 ```
 PromptTracker/
 ├── packages/
-│   ├── core/         # Domain types, dynamic pricing engine, 50MB RAM storage manager, exporter
+│   ├── core/         # Domain models, pricing engine, 50MB RAM storage manager, markdown exporter
 │   ├── scanners/     # Multi-tool pluggable scanner engine (Antigravity, Claude, Codex, Kiro, OpenCode)
-│   ├── cli/          # Global CLI binary (prompttracker / promptburn) with interactive TUI & date filter
-│   ├── server/       # Express REST API (/api/sessions, /api/summary, /api/open-session)
-│   └── web/          # Glassmorphic React + Vite dashboard bundled into server/public
-├── data/
-│   └── pricing.json  # Public CDN / GitHub fallback pricing registry
+│   ├── cli/          # Standalone prompt-lens binary with Ink TUI, stats, search, list, and export
+│   ├── server/       # Express REST API (paused for standalone CLI release)
+│   └── web/          # React + Vite dashboard (paused for standalone CLI release)
 ├── docs/
-│   ├── SPEC.md       # Complete production specification
-│   └── adr/          # Architectural Decision Records (0001 - 0004)
-├── lessons/          # Engineering lessons (01 - 06)
-└── .github/          # CI/CD Workflows (ci.yml, release.yml)
+│   └── SPEC.md       # Product & architectural specification
+└── .github/          # CI/CD workflows
 ```
 
 ---
 
 ## 🧪 Running Tests
 
-Run the full monorepo test suite across all packages:
 ```bash
-pnpm test
+npm test
 ```
 
 ---

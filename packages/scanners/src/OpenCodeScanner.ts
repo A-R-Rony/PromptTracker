@@ -25,9 +25,9 @@ export class OpenCodeScanner implements ToolScanner {
       this.scanFromSQLite(realDbPath, sessions);
     }
 
-    // 2. Legacy / Mock Fallback: JSON directory at ~/.opencode/sessions
+    // 2. Legacy / Mock Fallback: JSON directory at customBaseDir or ~/.opencode/sessions
     const legacyDir = this.customBaseDir || path.join(home, '.opencode', 'sessions');
-    if (fs.existsSync(legacyDir) && legacyDir !== path.dirname(realDbPath)) {
+    if (fs.existsSync(legacyDir) && (!fs.existsSync(realDbPath) || legacyDir !== path.dirname(realDbPath))) {
       try {
         const files = fs.readdirSync(legacyDir);
         for (const file of files) {
