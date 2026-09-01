@@ -6,41 +6,44 @@ import { filterSessionsByDate, DateFilterOptions } from '../dateFilter.js';
 import { Header } from './Header.js';
 import { SessionList } from './SessionList.js';
 import { SessionDetail } from './SessionDetail.js';
-import { DateFilterModal } from './DateFilterModal.js';
 import { Footer } from './Footer.js';
 import { exec } from 'child_process';
 
 interface AppProps {
   initialSessions: NormalizedSession[];
-  scopeLabel: string;
+  rawAllSessions: NormalizedSession[];
+  initialScopeLabel: string;
   storageManager: SessionStorageManager;
-  onOpenInIDE?: (filePath: string) => void;
 }
 
 export const App: React.FC<AppProps> = ({
   initialSessions,
-  scopeLabel,
+  rawAllSessions,
+  initialScopeLabel,
   storageManager,
 }) => {
   const { exit } = useApp();
 
-  // State
-  const [allSessions] = useState<NormalizedSession[]>(initialSessions);
+  // Navigation Screen State
+  const [currentScreen, setCurrentScreen] = useState<'list' | 'detail'>('list');
+  const [isAllProjects, setIsAllProjects] = useState<boolean>(!initialScopeLabel.startsWith('Project:'));
+  const [activeDatePreset, setActiveDatePreset] = useState<'today' | 'yesterday' | '7d' | '30d' | 'all'>('all');
   const [dateFilter, setDateFilter] = useState<DateFilterOptions>({ preset: 'all' });
   const [dateLabel, setDateLabel] = useState<string>('All Dates');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isSearchActive, setIsSearchActive] = useState<boolean>(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
-  const [activePane, setActivePane] = useState<'sessions' | 'details'>('sessions');
-  const [isDateModalOpen, setIsDateModalOpen] = useState<boolean>(false);
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [turnScrollIndex, setTurnScrollIndex] = useState<number>(0);
   const [expandedTurns, setExpandedTurns] = useState<Set<number>>(new Set());
   const [loadedTurns, setLoadedTurns] = useState<PromptTurn[]>([]);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  // Filtered sessions by date & search query
+  // Active pool of sessions depending on scope toggle
+  const sessionPool = isAllProjects ? rawAllSessions : initialSessions;
+
+  // Filtered sessions
   const filteredSessions = useMemo(() => {
-    const dateRes = filterSessionsByDate(allSessions, dateFilter);
+    const dateRes = filterSessionsByDate(sessionPool, dateFilter);
     let list = dateRes.filtered;
 
     if (searchQuery.trim()) {
@@ -58,7 +61,7 @@ export const App: React.FC<AppProps> = ({
       });
     }
     return list;
-  }, [allSessions, dateFilter, searchQuery]);
+  }, [sessionPool, dateFilter, searchQuery]);
 
   // Aggregate metrics
   const totalPrompts = useMemo(
@@ -86,19 +89,16 @@ export const App: React.FC<AppProps> = ({
     }
   }, [selectedSession, storageManager]);
 
-  // Ensure selected index is in bounds
+  // Keep index within bounds
   useEffect(() => {
     if (selectedIndex >= filteredSessions.length && filteredSessions.length > 0) {
       setSelectedIndex(filteredSessions.length - 1);
     }
   }, [filteredSessions.length, selectedIndex]);
 
-  // Keyboard navigation & Shortcuts
+  // Key navigation
   useInput((input, key) => {
-    // If date modal is open, DateFilterModal handles input
-    if (isDateModalOpen) return;
-
-    // Search input handling
+    // Search input handler
     if (isSearchActive) {
       if (key.escape || key.return) {
         setIsSearchActive(false);
@@ -106,9 +106,76 @@ export const App: React.FC<AppProps> = ({
       return;
     }
 
-    // Global Hotkeys
-    if (input === 'q' || key.escape) {
+    // Global Quit
+    if (input === 'q') {
       exit();
+      return;
+    }
+
+    // Screen 2 (Detail View) Keys
+    if (currentScreen === 'detail') {
+      if (key.escape || input === 'b') {
+        setCurrentScreen('list');
+        setTurnScrollIndex(0);
+        return;
+      }
+
+      if (key.upArrow || input === 'k') {
+        setTurnScrollIndex((prev) => Math.max(0, prev - 1));
+        return;
+      }
+
+      if (key.downArrow || input === 'j') {
+        setTurnScrollIndex((prev) => Math.min(Math.max(0, loadedTurns.length - 1), prev + 1));
+        return;
+      }
+
+      if (key.pageUp) {
+        setTurnScrollIndex((prev) => Math.max(0, prev - 3));
+        return;
+      }
+
+      if (key.pageDown) {
+        setTurnScrollIndex((prev) => Math.min(Math.max(0, loadedTurns.length - 1), prev + 3));
+        return;
+      }
+
+      if (input === ' ') {
+        if (loadedTurns.length > 0) {
+          setExpandedTurns((prev) => {
+            const next = new Set(prev);
+            if (next.size > 0) {
+              next.clear();
+            } else {
+              loadedTurns.forEach((t) => next.add(t.turnIndex));
+            }
+            return next;
+          });
+        }
+        return;
+      }
+
+      if (input === 'o' && selectedSession) {
+        selectedSession.turns = loadedTurns;
+        const mdPath = exportSessionToMarkdown(selectedSession);
+        const cmd = process.platform === 'win32' ? `start "" "${mdPath}"` : `open "${mdPath}"`;
+        exec(cmd, (err) => {
+          if (err) exec(`code "${mdPath}"`);
+        });
+        setStatusMessage(`🔥 Launched Editor with: ${mdPath}`);
+        setTimeout(() => setStatusMessage(null), 4000);
+        return;
+      }
+
+      return;
+    }
+
+    // Screen 1 (List View) Keys
+    if (key.return) {
+      if (selectedSession) {
+        setCurrentScreen('detail');
+        setTurnScrollIndex(0);
+      }
       return;
     }
 
@@ -117,38 +184,31 @@ export const App: React.FC<AppProps> = ({
       return;
     }
 
-    if (input === 'd') {
-      setIsDateModalOpen(true);
+    if (input === 'a') {
+      setIsAllProjects((prev) => !prev);
+      setSelectedIndex(0);
       return;
     }
 
-    if (key.tab) {
-      setActivePane((prev) => (prev === 'sessions' ? 'details' : 'sessions'));
+    // Direct Date Preset Filters: 1-5
+    if (['1', '2', '3', '4', '5'].includes(input)) {
+      const map: Record<string, 'today' | 'yesterday' | '7d' | '30d' | 'all'> = {
+        '1': 'today',
+        '2': 'yesterday',
+        '3': '7d',
+        '4': '30d',
+        '5': 'all',
+      };
+      const p = map[input];
+      setActiveDatePreset(p);
+      const res = filterSessionsByDate(sessionPool, { preset: p });
+      setDateFilter({ preset: p });
+      setDateLabel(res.label);
+      setSelectedIndex(0);
       return;
     }
 
-    if (input === 'f') {
-      setIsFullscreen((prev) => !prev);
-      return;
-    }
-
-    // Expand/collapse turn details
-    if (input === ' ') {
-      if (loadedTurns.length > 0) {
-        setExpandedTurns((prev) => {
-          const next = new Set(prev);
-          if (next.size > 0) {
-            next.clear();
-          } else {
-            loadedTurns.forEach((t) => next.add(t.turnIndex));
-          }
-          return next;
-        });
-      }
-      return;
-    }
-
-    // Open session in IDE / Markdown export
+    // Open directly in IDE from list
     if (input === 'o' && selectedSession) {
       selectedSession.turns = loadedTurns;
       const mdPath = exportSessionToMarkdown(selectedSession);
@@ -156,12 +216,11 @@ export const App: React.FC<AppProps> = ({
       exec(cmd, (err) => {
         if (err) exec(`code "${mdPath}"`);
       });
-      setStatusMessage(`🔥 Opened in IDE: ${mdPath}`);
+      setStatusMessage(`🔥 Launched Editor with: ${mdPath}`);
       setTimeout(() => setStatusMessage(null), 4000);
       return;
     }
 
-    // Arrow keys & j/k navigation
     if (key.upArrow || input === 'k') {
       setSelectedIndex((prev) => (prev > 0 ? prev - 1 : filteredSessions.length - 1));
       return;
@@ -173,21 +232,16 @@ export const App: React.FC<AppProps> = ({
     }
   });
 
-  const handleDatePresetSelect = (preset: 'today' | 'yesterday' | '7d' | '30d' | 'all') => {
-    const res = filterSessionsByDate(allSessions, { preset });
-    setDateFilter({ preset });
-    setDateLabel(res.label);
-    setIsDateModalOpen(false);
-    setSelectedIndex(0);
-  };
-
   const memStats = storageManager.getMemoryUsageSummary();
+  const currentScope = isAllProjects ? 'All Projects (Global)' : initialScopeLabel;
 
   return (
     <Box flexDirection="column" width="100%">
-      {/* Top Header Summary */}
+      {/* Top Header Summary with Date Filter Pills */}
       <Header
-        projectName={scopeLabel}
+        projectName={currentScope}
+        isAllProjects={isAllProjects}
+        datePreset={activeDatePreset}
         dateLabel={dateLabel}
         totalPrompts={totalPrompts}
         totalTokens={totalTokens}
@@ -197,7 +251,7 @@ export const App: React.FC<AppProps> = ({
 
       {/* Search Bar if Active or Filtered */}
       {(isSearchActive || searchQuery) && (
-        <Box borderStyle="single" borderColor="cyan" paddingX={1} marginBottom={0}>
+        <Box borderStyle="single" borderColor="cyan" paddingX={1} marginBottom={0} width="100%">
           <Text bold color="cyan">
             {'🔍 Search: '}
           </Text>
@@ -206,7 +260,7 @@ export const App: React.FC<AppProps> = ({
               value={searchQuery}
               onChange={setSearchQuery}
               onSubmit={() => setIsSearchActive(false)}
-              placeholder="Type keyword to filter prompts & projects (Press Enter to close)..."
+              placeholder="Type keyword to filter prompts & projects (Press Enter to apply)..."
             />
           ) : (
             <Text color="yellowBright">{`"${searchQuery}" (Press / to edit, Esc to clear)`}</Text>
@@ -214,46 +268,24 @@ export const App: React.FC<AppProps> = ({
         </Box>
       )}
 
-      {/* Main Split Layout or Fullscreen Detail */}
-      {isDateModalOpen ? (
-        <Box justifyContent="center" marginY={1}>
-          <DateFilterModal
-            currentPreset={dateFilter.preset || 'all'}
-            onSelectPreset={handleDatePresetSelect}
-            onClose={() => setIsDateModalOpen(false)}
-          />
-        </Box>
-      ) : isFullscreen ? (
+      {/* Main View: Screen 1 (List) OR Screen 2 (Detail) */}
+      {currentScreen === 'list' ? (
+        <SessionList
+          sessions={filteredSessions}
+          selectedIndex={selectedIndex}
+          maxVisible={15}
+        />
+      ) : selectedSession ? (
         <SessionDetail
           session={selectedSession}
           turns={loadedTurns}
-          isFocused={true}
+          scrollIndex={turnScrollIndex}
           expandedTurns={expandedTurns}
-          scrollOffset={0}
+          maxVisibleTurns={5}
         />
-      ) : (
-        <Box flexDirection="row" minHeight={16}>
-          <Box width="42%">
-            <SessionList
-              sessions={filteredSessions}
-              selectedIndex={selectedIndex}
-              isFocused={activePane === 'sessions'}
-              maxVisible={14}
-            />
-          </Box>
-          <Box width="58%" marginLeft={1}>
-            <SessionDetail
-              session={selectedSession}
-              turns={loadedTurns}
-              isFocused={activePane === 'details'}
-              expandedTurns={expandedTurns}
-              scrollOffset={0}
-            />
-          </Box>
-        </Box>
-      )}
+      ) : null}
 
-      {/* Status Bar / Feedback */}
+      {/* Feedback status message */}
       {statusMessage && (
         <Box paddingX={1}>
           <Text color="greenBright" bold>
@@ -262,12 +294,11 @@ export const App: React.FC<AppProps> = ({
         </Box>
       )}
 
-      {/* Footer Navigation Bar */}
+      {/* Bottom Action Footer */}
       <Footer
+        currentScreen={currentScreen}
         isSearchActive={isSearchActive}
         searchQuery={searchQuery}
-        isDetailsFocused={activePane === 'details'}
-        isFullscreen={isFullscreen}
       />
     </Box>
   );

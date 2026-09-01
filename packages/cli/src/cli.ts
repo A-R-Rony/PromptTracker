@@ -113,7 +113,7 @@ export async function runScan(options: {
   until?: string;
   noInteractive?: boolean;
 }) {
-  const { sessions, scopeLabel } = await loadSessions(options);
+  const { sessions, rawSessions, scopeLabel } = await loadSessions(options);
 
   if (options.noInteractive) {
     printTableList(sessions, scopeLabel);
@@ -125,7 +125,8 @@ export async function runScan(options: {
   render(
     React.createElement(App, {
       initialSessions: sessions,
-      scopeLabel,
+      rawAllSessions: rawSessions,
+      initialScopeLabel: scopeLabel,
       storageManager,
     })
   );

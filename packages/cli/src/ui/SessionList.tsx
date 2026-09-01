@@ -5,43 +5,46 @@ import { NormalizedSession } from '@prompttracker/core';
 interface SessionListProps {
   sessions: NormalizedSession[];
   selectedIndex: number;
-  isFocused: boolean;
   maxVisible?: number;
 }
 
 export function getToolBadge(tool: string): { label: string; color: string } {
-  const t = tool.toLowerCase();
-  if (t.includes('antigravity')) return { label: 'AGY', color: 'magentaBright' };
-  if (t.includes('opencode')) return { label: 'OPN', color: 'greenBright' };
-  if (t.includes('claude')) return { label: 'CLD', color: 'yellowBright' };
-  if (t.includes('gemini')) return { label: 'GEM', color: 'blueBright' };
-  return { label: tool.slice(0, 3).toUpperCase(), color: 'cyan' };
+  const t = (tool || '').toLowerCase();
+  if (t.includes('antigravity')) return { label: 'ANTIGRAVITY', color: 'magentaBright' };
+  if (t.includes('opencode')) return { label: 'OPENCODE   ', color: 'greenBright' };
+  if (t.includes('claude')) return { label: 'CLAUDE CODE', color: 'yellowBright' };
+  if (t.includes('gemini')) return { label: 'GEMINI CLI ', color: 'blueBright' };
+  return { label: tool.slice(0, 11).toUpperCase().padEnd(11), color: 'cyan' };
 }
 
 export const SessionList: React.FC<SessionListProps> = ({
   sessions,
   selectedIndex,
-  isFocused,
-  maxVisible = 12,
+  maxVisible = 15,
 }) => {
   if (sessions.length === 0) {
     return (
       <Box
         flexDirection="column"
-        borderStyle="single"
-        borderColor={isFocused ? 'cyan' : 'gray'}
-        paddingX={1}
-        minHeight={10}
-        flexGrow={1}
+        borderStyle="round"
+        borderColor="gray"
+        paddingX={2}
+        paddingY={2}
+        width="100%"
       >
-        <Text color="gray" italic>
-          No sessions found matching current filter or search.
+        <Text color="yellow" bold>
+          No sessions found for this project & date filter.
         </Text>
+        <Box marginTop={1}>
+          <Text color="gray" italic>
+            Try pressing [5] for All Time or [a] to switch to All Projects.
+          </Text>
+        </Box>
       </Box>
     );
   }
 
-  // Calculate windowed slice for smooth scrolling
+  // Smooth sliding window
   const half = Math.floor(maxVisible / 2);
   let startIndex = Math.max(0, selectedIndex - half);
   let endIndex = startIndex + maxVisible;
@@ -57,15 +60,17 @@ export const SessionList: React.FC<SessionListProps> = ({
     <Box
       flexDirection="column"
       borderStyle="round"
-      borderColor={isFocused ? 'cyanBright' : 'gray'}
+      borderColor="cyanBright"
       paddingX={1}
-      flexGrow={1}
+      width="100%"
     >
       <Box justifyContent="space-between" marginBottom={0}>
-        <Text bold color={isFocused ? 'cyanBright' : 'white'}>
-          {`📋 SESSIONS (${selectedIndex + 1}/${sessions.length})`}
+        <Text bold color="cyanBright">
+          {`📋 SESSIONS LIST (${selectedIndex + 1} of ${sessions.length})`}
         </Text>
-        <Text color="gray">{isFocused ? '[Focused]' : '[Press Tab]'}</Text>
+        <Text color="gray">
+          {'Press [Enter] to open conversation turns • [o] Open in IDE'}
+        </Text>
       </Box>
 
       {visibleSessions.map((session, relIndex) => {
@@ -73,31 +78,47 @@ export const SessionList: React.FC<SessionListProps> = ({
         const isSelected = absIndex === selectedIndex;
         const badge = getToolBadge(session.toolSource);
         const datePart = session.date || 'Unknown';
-        
+
         // Clean prompt summary
         const promptSummary = (session.projectName || 'Session').replace(/[\r\n]+/g, ' ');
+        const pathPart = session.projectPath ? ` [${session.projectPath.split(/[\\/]/).pop()}]` : '';
+        const fullTitle = `${promptSummary}${pathPart}`;
         const truncatedSummary =
-          promptSummary.length > 26 ? promptSummary.slice(0, 24) + '..' : promptSummary.padEnd(26);
+          fullTitle.length > 55 ? fullTitle.slice(0, 52) + '...' : fullTitle.padEnd(55);
 
-        const tokenText = `${session.totalTokens.total.toLocaleString()}t`;
+        const tokenText = `${session.totalTokens.total.toLocaleString()} tok`;
+        const costText = `$${session.estimatedCostUsd.toFixed(4)}`;
 
         return (
-          <Box key={session.id || `${session.timestamp}-${absIndex}`} justifyContent="space-between">
+          <Box
+            key={session.id || `${session.timestamp}-${absIndex}`}
+            justifyContent="space-between"
+            width="100%"
+          >
             <Box>
               <Text color={isSelected ? 'cyanBright' : 'gray'} bold={isSelected}>
                 {isSelected ? '▶ ' : '  '}
               </Text>
-              <Text color="gray">{datePart.slice(5)} </Text>
+              <Text color={isSelected ? 'white' : 'gray'} bold={isSelected}>
+                {datePart}{' '}
+              </Text>
+              <Text color="gray">{'│ '}</Text>
               <Text color={badge.color as any} bold>
                 {`[${badge.label}] `}
               </Text>
-              <Text color={isSelected ? 'white' : 'gray'} bold={isSelected}>
+              <Text color="gray">{'│ '}</Text>
+              <Text color={isSelected ? 'yellowBright' : 'white'} bold={isSelected}>
                 {truncatedSummary}{' '}
               </Text>
             </Box>
             <Box>
-              <Text color={isSelected ? 'yellowBright' : 'gray'} bold={isSelected}>
-                {tokenText}
+              <Text color="gray">{'│ '}</Text>
+              <Text color={isSelected ? 'cyanBright' : 'gray'} bold={isSelected}>
+                {tokenText.padStart(12)}{' '}
+              </Text>
+              <Text color="gray">{'│ '}</Text>
+              <Text color={isSelected ? 'greenBright' : 'gray'} bold={isSelected}>
+                {costText.padStart(8)}
               </Text>
             </Box>
           </Box>
