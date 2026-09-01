@@ -7,35 +7,25 @@ interface SessionDetailProps {
   session: NormalizedSession;
   turns: PromptTurn[];
   scrollIndex: number;
-  expandedTurns: Set<number>;
   maxVisibleTurns?: number;
 }
 
-export function cleanPromptText(text: string, isExpanded: boolean): string {
-  if (!text) return '(Empty user prompt)';
-  const trimmed = text.trim();
-  if (isExpanded || trimmed.length <= 450) return trimmed;
-  return trimmed.slice(0, 450) + '\n... [Press Space to expand full prompt]';
-}
-
-export function cleanResponseText(text: string, isExpanded: boolean): string {
-  if (!text) return '(No response text captured)';
-  const trimmed = text.trim();
-  if (isExpanded || trimmed.length <= 500) return trimmed;
-  return trimmed.slice(0, 500) + '\n... [Press Space to expand full response]';
+export function cleanSingleLine(text: string, maxLen = 120): string {
+  if (!text) return '';
+  const single = text.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (single.length <= maxLen) return single;
+  return single.slice(0, maxLen) + '...';
 }
 
 export const SessionDetail: React.FC<SessionDetailProps> = ({
   session,
   turns,
   scrollIndex,
-  expandedTurns,
-  maxVisibleTurns = 4,
+  maxVisibleTurns = 8,
 }) => {
   const badge = getToolBadge(session.toolSource);
   const totalTurnsCount = turns.length;
 
-  // Windowed turns for vertical pager
   const startIndex = Math.min(scrollIndex, Math.max(0, totalTurnsCount - maxVisibleTurns));
   const visibleTurns = turns.slice(startIndex, startIndex + maxVisibleTurns);
 
@@ -79,10 +69,12 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
             <Text color="white">{session.date}</Text>
             {` │ Turns: `}
             <Text color="greenBright" bold>{totalTurnsCount}</Text>
-            {` (Showing ${startIndex + 1}-${Math.min(startIndex + maxVisibleTurns, totalTurnsCount)})`}
+            {totalTurnsCount > maxVisibleTurns
+              ? ` (Showing ${startIndex + 1}-${Math.min(startIndex + maxVisibleTurns, totalTurnsCount)})`
+              : ''}
           </Text>
-          <Text color="gray">
-            {session.projectPath ? `Dir: .../${session.projectPath.split(/[\\/]/).slice(-2).join('/')}` : ''}
+          <Text color="greenBright" bold>
+            {'[Enter / o] Open in Editor'}
           </Text>
         </Box>
       </Box>
@@ -97,9 +89,12 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
           </Box>
         ) : (
           visibleTurns.map((turn) => {
-            const isExpanded = expandedTurns.has(turn.turnIndex);
             const inTokens = turn.tokens?.input || 0;
             const outTokens = turn.tokens?.output || 0;
+            const responseText = cleanSingleLine(
+              turn.assistantResponse || turn.assistantSummary || '',
+              130
+            );
 
             return (
               <Box
@@ -109,68 +104,35 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
                 borderColor="gray"
                 paddingX={1}
                 paddingY={0}
-                marginBottom={1}
+                marginBottom={0}
                 width="100%"
               >
-                {/* Turn Header */}
+                {/* User Prompt Row */}
                 <Box justifyContent="space-between" width="100%">
                   <Box>
                     <Text color="greenBright" bold>
                       {`📑 [Turn #${turn.turnIndex}] `}
                     </Text>
-                    <Text color="gray">
-                      {`(${inTokens.toLocaleString()} in / ${outTokens.toLocaleString()} out)`}
+                    <Text color="white">
+                      {cleanSingleLine(turn.userPrompt, 110)}
                     </Text>
                   </Box>
-                  <Text color="cyan">
-                    {isExpanded ? '[-] Full View' : '[+] Compact View'}
+                  <Text color="gray">
+                    {`(${inTokens.toLocaleString()} in / ${outTokens.toLocaleString()} out)`}
                   </Text>
                 </Box>
 
-                {/* User Prompt */}
-                <Box marginTop={0} flexDirection="column">
-                  <Text color="white">
-                    {cleanPromptText(turn.userPrompt, isExpanded)}
-                  </Text>
-                </Box>
-
-                {/* Tool Calls Chips (if any) */}
-                {turn.toolCalls && turn.toolCalls.length > 0 && (
-                  <Box marginTop={1} flexDirection="row" flexWrap="wrap">
-                    <Text color="gray">{'🛠️ Tools: '}</Text>
-                    {turn.toolCalls.slice(0, isExpanded ? 10 : 3).map((tool, idx) => (
-                      <Box key={idx} marginRight={1}>
-                        <Text color="magenta">
-                          {`[${tool.name}${tool.args?.TargetFile ? ': ' + tool.args.TargetFile.split(/[\\/]/).pop() : ''}]`}
-                        </Text>
-                      </Box>
-                    ))}
-                    {turn.toolCalls.length > 3 && !isExpanded && (
-                      <Text color="gray">{`+${turn.toolCalls.length - 3} more`}</Text>
-                    )}
-                  </Box>
-                )}
-
-                {/* Assistant Response */}
-                {(turn.assistantResponse || turn.assistantSummary) && (
-                  <Box
-                    marginTop={1}
-                    flexDirection="column"
-                    borderStyle="single"
-                    borderColor="magenta"
-                    paddingX={1}
-                  >
+                {/* 1-Line Agent Response */}
+                {responseText ? (
+                  <Box marginTop={0}>
                     <Text color="magentaBright" bold>
-                      {'🤖 Assistant Response:'}
+                      {'  ↳ 🤖 Agent: '}
                     </Text>
                     <Text color="gray">
-                      {cleanResponseText(
-                        turn.assistantResponse || turn.assistantSummary || '',
-                        isExpanded
-                      )}
+                      {responseText}
                     </Text>
                   </Box>
-                )}
+                ) : null}
               </Box>
             );
           })

@@ -30,7 +30,7 @@ export const Footer: React.FC<FooterProps> = ({
           <Text color="cyanBright" bold>
             {'[Enter] '}
           </Text>
-          <Text color="white" bold>{'Open Conversation  '}</Text>
+          <Text color="white" bold>{'View Turns  '}</Text>
 
           <Text color="cyanBright" bold>
             {'[1-5] '}
@@ -50,7 +50,7 @@ export const Footer: React.FC<FooterProps> = ({
           <Text color="cyanBright" bold>
             {'[o] '}
           </Text>
-          <Text color="gray">{'Open in IDE  '}</Text>
+          <Text color="gray">{'Open in Editor  '}</Text>
 
           <Text color="cyanBright" bold>
             {'[q] '}
@@ -64,20 +64,15 @@ export const Footer: React.FC<FooterProps> = ({
           </Text>
           <Text color="gray">{'Scroll Turns  '}</Text>
 
-          <Text color="cyanBright" bold>
-            {'[Space] '}
+          <Text color="greenBright" bold>
+            {'[Enter / o] '}
           </Text>
-          <Text color="gray">{'Expand/Collapse Full Text  '}</Text>
-
-          <Text color="cyanBright" bold>
-            {'[o] '}
-          </Text>
-          <Text color="greenBright" bold>{'Open in IDE / Editor  '}</Text>
+          <Text color="white" bold>{'Open Full Response in Editor  '}</Text>
 
           <Text color="cyanBright" bold>
             {'[b / Esc] '}
           </Text>
-          <Text color="yellowBright" bold>{'Back to Sessions List  '}</Text>
+          <Text color="yellowBright" bold>{'Back to Sessions  '}</Text>
 
           <Text color="cyanBright" bold>
             {'[q] '}

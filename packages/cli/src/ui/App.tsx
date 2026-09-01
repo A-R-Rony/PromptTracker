@@ -34,7 +34,6 @@ export const App: React.FC<AppProps> = ({
   const [isSearchActive, setIsSearchActive] = useState<boolean>(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [turnScrollIndex, setTurnScrollIndex] = useState<number>(0);
-  const [expandedTurns, setExpandedTurns] = useState<Set<number>>(new Set());
   const [loadedTurns, setLoadedTurns] = useState<PromptTurn[]>([]);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
@@ -96,6 +95,17 @@ export const App: React.FC<AppProps> = ({
     }
   }, [filteredSessions.length, selectedIndex]);
 
+  const openInEditor = (session: NormalizedSession) => {
+    session.turns = loadedTurns;
+    const mdPath = exportSessionToMarkdown(session);
+    const cmd = process.platform === 'win32' ? `start "" "${mdPath}"` : `open "${mdPath}"`;
+    exec(cmd, (err) => {
+      if (err) exec(`code "${mdPath}"`);
+    });
+    setStatusMessage(`🔥 Launched Editor with full session: ${mdPath}`);
+    setTimeout(() => setStatusMessage(null), 4000);
+  };
+
   // Key navigation
   useInput((input, key) => {
     // Search input handler
@@ -120,6 +130,13 @@ export const App: React.FC<AppProps> = ({
         return;
       }
 
+      if (key.return || input === 'o') {
+        if (selectedSession) {
+          openInEditor(selectedSession);
+        }
+        return;
+      }
+
       if (key.upArrow || input === 'k') {
         setTurnScrollIndex((prev) => Math.max(0, prev - 1));
         return;
@@ -131,39 +148,12 @@ export const App: React.FC<AppProps> = ({
       }
 
       if (key.pageUp) {
-        setTurnScrollIndex((prev) => Math.max(0, prev - 3));
+        setTurnScrollIndex((prev) => Math.max(0, prev - 4));
         return;
       }
 
       if (key.pageDown) {
-        setTurnScrollIndex((prev) => Math.min(Math.max(0, loadedTurns.length - 1), prev + 3));
-        return;
-      }
-
-      if (input === ' ') {
-        if (loadedTurns.length > 0) {
-          setExpandedTurns((prev) => {
-            const next = new Set(prev);
-            if (next.size > 0) {
-              next.clear();
-            } else {
-              loadedTurns.forEach((t) => next.add(t.turnIndex));
-            }
-            return next;
-          });
-        }
-        return;
-      }
-
-      if (input === 'o' && selectedSession) {
-        selectedSession.turns = loadedTurns;
-        const mdPath = exportSessionToMarkdown(selectedSession);
-        const cmd = process.platform === 'win32' ? `start "" "${mdPath}"` : `open "${mdPath}"`;
-        exec(cmd, (err) => {
-          if (err) exec(`code "${mdPath}"`);
-        });
-        setStatusMessage(`🔥 Launched Editor with: ${mdPath}`);
-        setTimeout(() => setStatusMessage(null), 4000);
+        setTurnScrollIndex((prev) => Math.min(Math.max(0, loadedTurns.length - 1), prev + 4));
         return;
       }
 
@@ -208,16 +198,9 @@ export const App: React.FC<AppProps> = ({
       return;
     }
 
-    // Open directly in IDE from list
+    // Open in IDE directly from list
     if (input === 'o' && selectedSession) {
-      selectedSession.turns = loadedTurns;
-      const mdPath = exportSessionToMarkdown(selectedSession);
-      const cmd = process.platform === 'win32' ? `start "" "${mdPath}"` : `open "${mdPath}"`;
-      exec(cmd, (err) => {
-        if (err) exec(`code "${mdPath}"`);
-      });
-      setStatusMessage(`🔥 Launched Editor with: ${mdPath}`);
-      setTimeout(() => setStatusMessage(null), 4000);
+      openInEditor(selectedSession);
       return;
     }
 
@@ -280,8 +263,7 @@ export const App: React.FC<AppProps> = ({
           session={selectedSession}
           turns={loadedTurns}
           scrollIndex={turnScrollIndex}
-          expandedTurns={expandedTurns}
-          maxVisibleTurns={5}
+          maxVisibleTurns={8}
         />
       ) : null}
 
