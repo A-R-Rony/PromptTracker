@@ -1,5 +1,7 @@
 # 1. Model Response Rendering & Two-Tier Lazy Loading
 
+> The response-rendering decision remains active. Memory guarantees and the original loading implementation are superseded by ADR 0005.
+
 We decided to preserve full, un-truncated model responses and tool executions in exported Markdown transcripts while using a two-tier metadata indexing strategy to prevent high memory usage during CLI scanning.
 
 ## Context
@@ -11,5 +13,5 @@ AI coding assistants produce large session logs containing detailed explanations
 3. **Terminal Preview Boundaries**: The Terminal UI (TUI) displays a concise preview (200-300 characters) to avoid scrollback flooding, while the full content is accessible via the IDE Markdown export.
 
 ## Consequences
-- **Memory Efficiency**: The CLI remains lightweight and instantaneous regardless of whether the developer has 50 or 5,000 recorded sessions.
+- **Memory Efficiency**: Metadata-first loading reduces the amount of full Turn content retained during ordinary navigation; it is not a strict process-memory guarantee.
 - **Developer Experience**: Developers get clean, syntax-highlighted, full-fidelity conversation transcripts inside their preferred IDE without losing access to original raw files.

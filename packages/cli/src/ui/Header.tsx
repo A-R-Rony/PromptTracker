@@ -9,7 +9,6 @@ interface HeaderProps {
   totalPrompts: number;
   totalTokens: number;
   totalCost: number;
-  memoryUsageMb: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,7 +18,6 @@ export const Header: React.FC<HeaderProps> = ({
   totalPrompts,
   totalTokens,
   totalCost,
-  memoryUsageMb,
 }) => {
   const presets = [
     { key: '1', label: 'Today', value: 'today' },
@@ -93,9 +91,6 @@ export const Header: React.FC<HeaderProps> = ({
           <Text color="yellowBright" bold>
             {'$' + totalCost.toFixed(4)}
           </Text>
-        </Box>
-        <Box>
-          <Text color="gray">{'RAM: ' + memoryUsageMb + '/50MB'}</Text>
         </Box>
       </Box>
     </Box>

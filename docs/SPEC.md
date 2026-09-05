@@ -5,7 +5,7 @@ Developers work across multiple AI coding assistants (Google Antigravity IDE, Cl
 1. They have zero centralized visibility into what prompts they wrote, how many tokens were consumed, or what it cost.
 2. Every tool stores session logs in proprietary directories and disparate formats (`.jsonl`, `.json`, nested workspace UUIDs).
 3. Starting a new session or retrospective requires manually hunting through filesystem directories.
-4. Telemetry engines risk consuming gigabytes of RAM if thousands of historical turns are held in memory.
+4. Telemetry engines can become sluggish if thousands of historical Turns are held in memory at once.
 5. Developers need a zero-configuration global tool (`npx prompttracker` or `npm i -g prompttracker`) as well as a live online web demo to explore telemetry features before installing.
 
 ## Solution
@@ -14,7 +14,7 @@ PromptTracker is a **local-first developer telemetry and prompt analytics engine
 2. Normalizes disparate session formats into unified Sessions, Turns, and Token Metrics.
 3. Provides a fast, interactive Terminal UI (TUI) and an aesthetic Glassmorphic Web Dashboard.
 4. Preserves full, un-truncated model responses and tool executions in Markdown transcripts for IDE review.
-5. Employs local SQLite storage (`~/.prompttracker/data.db`) with two-tier metadata indexing and a 50MB RAM ceiling with dynamic disk spillover.
+5. Uses two-tier Session loading so navigation does not require every complete Turn body at once.
 6. Deploys a live interactive web showcase to Vercel with mock telemetry data and publishes versioned packages to npm.
 
 ## User Stories
@@ -27,7 +27,7 @@ PromptTracker is a **local-first developer telemetry and prompt analytics engine
 6. As a developer, I want to inspect a session turn-by-turn in my terminal to review user prompts and model responses.
 7. As a developer, I want to click "Open in IDE" to generate a formatted `.md` transcript with full un-truncated model responses and collapsible tool calls, and immediately open it in VS Code.
 8. As a developer, I want to launch an interactive web dashboard via `prompttracker ui` to view charts, daily spend trends, tool breakdowns, and split-screen conversation readers.
-9. As a developer, I want the tool to scan thousands of multi-megabyte sessions without consuming more than 50MB of RAM by storing full turn bodies in local SQLite/disk cache.
+9. As a developer, I want the tool to navigate large Session histories without loading every complete Turn body at once.
 10. As a developer, I want to see token metrics (input, output, cache read, total) and estimated dollar costs per session and aggregated across tools.
 11. As a prospective user, I want to visit the live web demo on Vercel to explore sample telemetry charts and conversation readers before installing locally.
 12. As a maintainer, I want pushing a release tag to automatically trigger GitHub Actions to run tests, publish to npm with provenance, and deploy the web demo to Vercel.
@@ -57,7 +57,7 @@ PromptTracker/
 
 ### Seams & Boundaries
 1. **Tool Scanner Seam**: All assistant extractors implement `ToolScanner` returning `Promise<NormalizedSession[]>`.
-2. **Storage Seam**: `SessionStorageManager` backed by SQLite (`~/.prompttracker/data.db`) enforcing the 50MB RAM limit with lazy rehydration.
+2. **Storage Seam**: `SessionStorageManager` separates compact Session navigation data from complete Turn bodies loaded for inspection or export.
 3. **Transport Seam**: `NormalizedSession` schema is the shared contract between Core, Scanners, CLI, REST API, and Web UI.
 4. **Distribution Seam**:
    - CLI package published to npm under `prompttracker` (with `bin` configured for `prompttracker` and `promptburn`).

@@ -4,24 +4,20 @@ import { render } from 'ink';
 import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
-import * as path from 'path';
 import * as fs from 'fs';
 import { NormalizedSession, SessionStorageManager, exportSessionToMarkdown } from '@prompttracker/core';
 import { ScannerRegistry } from '@prompttracker/scanners';
 import { filterSessionsByDate, DateFilterOptions } from './dateFilter.js';
+import { filterSessionsByScope } from './scope.js';
 import { App } from './ui/App.js';
 
 const program = new Command();
-const storageManager = new SessionStorageManager(50); // 50MB RAM Threshold
+const storageManager = new SessionStorageManager(50); // Legacy content budget until SQLite cache replacement.
 
 program
   .name('prompt-lens')
   .description('Universal AI Coding Prompt & Token Usage Telemetry Tracker')
   .version('0.1.0');
-
-function placeholderPath(p: string): string {
-  return p.replace(/\\/g, '/');
-}
 
 async function loadSessions(options: {
   all?: boolean;
@@ -37,54 +33,9 @@ async function loadSessions(options: {
     storageManager.manageSessionMemory(s);
   }
 
-  let scopeLabel = 'All Projects';
-  const cwd = placeholderPath(process.cwd());
-  const cwdName = path.basename(cwd);
-  let sessions = rawSessions;
-
-  if (options.project) {
-    const q = options.project.toLowerCase();
-    sessions = sessions.filter(
-      (s) =>
-        (s.projectPath && s.projectPath.toLowerCase().includes(q)) ||
-        s.projectName.toLowerCase().includes(q)
-    );
-    scopeLabel = 'Project: ' + options.project;
-  } else if (!options.all) {
-    const parentDir = placeholderPath(path.resolve(cwd, '..'));
-    const parentName = path.basename(parentDir);
-
-    const matched = rawSessions.filter((s) => {
-      if (!s.projectPath) return false;
-      const p = placeholderPath(s.projectPath).toLowerCase();
-      const cur = cwd.toLowerCase();
-      const par = parentDir.toLowerCase();
-      const curN = cwdName.toLowerCase();
-      const parN = parentName.toLowerCase();
-
-      return (
-        p === cur ||
-        p === par ||
-        p.startsWith(cur) ||
-        cur.startsWith(p) ||
-        p.startsWith(par) ||
-        par.startsWith(p) ||
-        p.includes(curN) ||
-        p.includes(parN)
-      );
-    });
-
-    if (matched.length > 0) {
-      sessions = matched;
-      scopeLabel =
-        'Project: ' +
-        (cwdName === 'cli' || cwdName === 'prototype' || cwdName === 'packages'
-          ? parentName
-          : cwdName);
-    } else {
-      scopeLabel = 'All Projects (Global)';
-    }
-  }
+  const scoped = filterSessionsByScope(rawSessions, options);
+  const sessions = scoped.sessions;
+  const scopeLabel = scoped.scopeLabel;
 
   const dateFilterOpts: DateFilterOptions = {
     date: options.date,
@@ -227,55 +178,7 @@ program
     console.log(modelTable.toString());
   });
 
-// 3. Subcommand: search <query>
-program
-  .command('search <query>')
-  .description('Search prompt texts and model responses across sessions')
-  .option('-a, --all', 'Search all global projects')
-  .action(async (query: string, opts) => {
-    const { sessions, scopeLabel } = await loadSessions(opts);
-    const q = query.toLowerCase();
-
-    console.log(chalk.cyan.bold(`\n🔍 Searching sessions for: "${query}" in [${scopeLabel}]...\n`));
-
-    const matches: { session: NormalizedSession; matchingTurns: string[] }[] = [];
-
-    for (const s of sessions) {
-      const fullTurns = storageManager.loadFullTurns(s);
-      const matchedPromptSnippets: string[] = [];
-
-      for (const t of fullTurns) {
-        if (t.userPrompt.toLowerCase().includes(q)) {
-          matchedPromptSnippets.push(`[Prompt Turn #${t.turnIndex}]: ${t.userPrompt.slice(0, 100)}...`);
-        } else if (t.assistantResponse?.toLowerCase().includes(q) || t.assistantSummary?.toLowerCase().includes(q)) {
-          matchedPromptSnippets.push(`[Response Turn #${t.turnIndex}]: ${(t.assistantSummary || t.assistantResponse || '').slice(0, 100)}...`);
-        }
-      }
-
-      if (matchedPromptSnippets.length > 0 || (s.projectName && s.projectName.toLowerCase().includes(q))) {
-        matches.push({ session: s, matchingTurns: matchedPromptSnippets });
-      }
-    }
-
-    if (matches.length === 0) {
-      console.log(chalk.yellow(`No prompt or session matching "${query}" was found.`));
-      return;
-    }
-
-    console.log(chalk.green(`Found ${matches.length} matching sessions:\n`));
-    for (const m of matches.slice(0, 20)) {
-      console.log(
-        chalk.cyan.bold(`▶ ${m.session.date} | [${m.session.toolSource}] | ${m.session.projectName}`) +
-          chalk.gray(` (${m.session.totalTokens.total.toLocaleString()} tokens)`)
-      );
-      for (const snip of m.matchingTurns.slice(0, 2)) {
-        console.log(chalk.gray(`   ↳ ${snip}`));
-      }
-      console.log();
-    }
-  });
-
-// 4. Subcommand: list
+// 3. Subcommand: list
 program
   .command('list')
   .description('List sessions in tabular or JSON format for scripting')

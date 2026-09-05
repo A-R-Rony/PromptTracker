@@ -7,7 +7,7 @@
     "dev": "vite",
     "typecheck": "tsc -p tsconfig.json",
     "build": "tsc -p tsconfig.json && vite build",
-    "test": "tsc -p tsconfig.test.json && node --test dist/filters.test.js dist/format.test.js"
+    "test": "tsc -p tsconfig.test.json && node --test dist/filters.test.js dist/format.test.js dist/App.test.js"
   },
   "dependencies": {
     "react": "^18.3.1",

@@ -299,23 +299,6 @@ header.app-header {
   gap: 14px;
 }
 
-.search-input {
-  width: 100%;
-  padding: 10px 14px;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid var(--border-glass);
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-family: var(--font-main);
-  font-size: 13px;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.search-input:focus {
-  border-color: var(--accent-indigo);
-}
-
 .date-preset-pills {
   display: flex;
   gap: 6px;

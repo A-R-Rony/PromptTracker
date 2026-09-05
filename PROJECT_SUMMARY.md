@@ -81,7 +81,7 @@ D:\PetProjects\PrompotTracker\
 ### 4. Interactive Web Dashboard
 - Run `npm run ui` (default: `http://localhost:4321`).
 - Glassmorphic UI with KPI cards (Total Tokens, Prompts, Estimated Cost, Active Tools).
-- Split-screen conversation reader with searchable session list and one-click IDE launch button.
+- Split-screen conversation reader with date navigation and a one-click IDE launch button.
 
 ---
 

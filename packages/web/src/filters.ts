@@ -2,17 +2,6 @@ import type { NormalizedSession } from '../../core/dist/types';
 
 export type DatePreset = 'today' | 'yesterday' | '7d' | '30d' | 'all';
 
-export function searchSessions(sessions: NormalizedSession[], query: string): NormalizedSession[] {
-  const q = query.trim().toLowerCase();
-  if (!q) return sessions;
-  return sessions.filter(s =>
-    s.projectName.toLowerCase().includes(q) ||
-    s.toolSource.toLowerCase().includes(q) ||
-    s.model.toLowerCase().includes(q) ||
-    s.turns.some(t => t.userPrompt.toLowerCase().includes(q))
-  );
-}
-
 export function filterSessionsByDatePreset(
   sessions: NormalizedSession[],
   preset: DatePreset,

@@ -1,7 +1,7 @@
 # 🔍 PromptLens (`prompt-lens`)
 
 > **Universal AI Coding Prompt & Token Usage Telemetry Tracker**  
-> Automatically aggregate, analyze, search, and navigate prompt history, token burn, model costs, and conversation transcripts across Google Antigravity, Anthropic Claude Code, OpenAI Codex, Kiro IDE, and OpenCode in a modern terminal UI.
+> Automatically aggregate, analyze, and navigate prompt history, token burn, model costs, and conversation transcripts across Google Antigravity, Anthropic Claude Code, OpenAI Codex, Kiro IDE, and OpenCode in a modern terminal UI.
 
 [![CI](https://github.com/A-R-Rony/PromptTracker/actions/workflows/ci.yml/badge.svg)](https://github.com/A-R-Rony/PromptTracker/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/prompt-lens.svg)](https://www.npmjs.com/package/prompt-lens)
@@ -39,7 +39,7 @@ prompt-lens
   - 🟡 **Kiro IDE** (`~/.kiro/workspaces/`)
   - 🔴 **OpenCode** (`~/.local/share/opencode/opencode.db` and legacy `~/.opencode/sessions/`)
 - **Accurate Model Tokens & Telemetry**: Distinguishes exact hardware telemetry from heuristic calculations with `Est.` indicators.
-- **Strict 50MB RAM Threshold with Disk Spillover**: Guarantees lightweight CLI operation even with hundreds of megabytes of conversation logs.
+- **Two-Tier Session Loading**: Keeps compact Session information available for navigation and loads complete Turns only when needed.
 - **Smart Directory Scoping**: Automatically scopes sessions to the active repository (including monorepo subfolders) with 1-key machine-wide toggle (`a`).
 - **Instant Date Filter Pills**: Instant hotkeys (`1-5`) for *Today*, *Yesterday*, *Last 7 Days*, *Last 30 Days*, and *All Time*.
 - **1-Click IDE Markdown Exporter**: Inspect turns in-terminal and press `Enter` or `o` to pop open the full formatted transcript in VS Code / default editor.
@@ -65,7 +65,6 @@ prompt-lens -a
 | `Enter` / `o` | Detail View | Launch full conversation `.md` in VS Code / IDE |
 | `1` - `5` | Sessions List | Instant date filter presets (`1: Today`, `2: Yesterday`, `3: 7D`, `4: 30D`, `5: All`) |
 | `a` | Sessions List | Toggle between current project scope and global filesystem |
-| `/` | Sessions List | Open live search filter |
 | `b` / `Esc` | Detail View | Return back to Sessions List |
 | `q` | Anywhere | Quit PromptLens |
 
@@ -83,16 +82,7 @@ prompt-lens stats -a
 
 ---
 
-### 3. Fast Prompt & Response Search (`search`)
-Search across all user prompts and assistant completions:
-```bash
-prompt-lens search "database migration"
-prompt-lens search "refactor" -a
-```
-
----
-
-### 4. Tabular List & Scripting (`list`)
+### 3. Tabular List & Scripting (`list`)
 Export or pipe session telemetry directly into CLI scripts or `jq`:
 ```bash
 # Clean ASCII table
@@ -104,7 +94,7 @@ prompt-lens list --json | jq .
 
 ---
 
-### 5. Session Export (`export`)
+### 4. Session Export (`export`)
 Export a session transcript to formatted Markdown or JSON:
 ```bash
 # Export latest session to Markdown
@@ -117,18 +107,13 @@ prompt-lens export <sessionId> --format json --out ./session.json
 
 ---
 
-## 🧠 Why Do We Track RAM Memory (50MB Threshold)?
+## 🧠 Why Do We Load Sessions in Two Tiers?
 
 When indexing developers' local coding assistants (like Antigravity, OpenCode, Claude Code, and Codex), conversation logs accumulate **hundreds of megabytes of raw JSON/JSONL transcripts** with large code completions and tool call payloads.
 
-Loading all historical sessions into Node.js heap memory at once would cause high memory usage, sluggish terminal response, or `JavaScript heap out of memory` errors.
+Loading every historical response at once can make a terminal application slow and memory-heavy. Prompt Lens therefore keeps compact Session information available for navigation and can place larger Turn bodies in its local cache. Selecting or exporting a Session restores its complete Turns when available.
 
-To solve this, `prompt-lens` employs a **50MB RAM Threshold with Disk Spillover**:
-1. **Lightweight In-Memory Index**: Session headers, token counts, and 1-line summaries are kept in RAM for instant search and instant UI sorting.
-2. **Disk Spillover**: When memory consumption approaches the 50MB ceiling, heavy turn bodies and multiline responses are spilled to a local cache directory (`~/.prompttracker/cache/`).
-3. **Lazy Rehydration**: When you select a session to inspect or export, full turn details are streamed lazily from disk in milliseconds without ever consuming excess RAM.
-
-This keeps `prompt-lens` lightning fast (<100ms startup) with a negligible memory footprint.
+This is a content-management strategy, not a measurement or guarantee of the Node.js process's RAM usage.
 
 ---
 
@@ -137,9 +122,9 @@ This keeps `prompt-lens` lightning fast (<100ms startup) with a negligible memor
 ```
 PromptTracker/
 ├── packages/
-│   ├── core/         # Domain models, pricing engine, 50MB RAM storage manager, markdown exporter
+│   ├── core/         # Domain models, pricing engine, Session storage, Markdown exporter
 │   ├── scanners/     # Multi-tool pluggable scanner engine (Antigravity, Claude, Codex, Kiro, OpenCode)
-│   ├── cli/          # Standalone prompt-lens binary with Ink TUI, stats, search, list, and export
+│   ├── cli/          # Standalone prompt-lens binary with Ink TUI, stats, list, and export
 │   ├── server/       # Express REST API (paused for standalone CLI release)
 │   └── web/          # React + Vite dashboard (paused for standalone CLI release)
 ├── docs/

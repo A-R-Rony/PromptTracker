@@ -9,7 +9,7 @@ A local-first telemetry and intelligence hub for developers using multiple AI co
 1. **100% Privacy & Local-First**: No developer prompts or sensitive code snippets ever leave the developer machine.
 2. **Zero-Config Passive Scanning**: Automatic ingestion from standard OS file paths (JSONL, SQLite, JSON, Markdown).
 3. **Deep Navigation**: One-click opening from dashboard directly into the source IDE or conversation file.
-4. **Rich Aesthetics**: Glassmorphic, dark-mode-first dashboard with instant search, date filters, and multi-model cost analytics.
+4. **Rich Aesthetics**: Glassmorphic, dark-mode-first dashboard with date filters and multi-model cost analytics.
 
 ---
 
@@ -20,7 +20,7 @@ D:\PetProjects\PrompotTracker\
 ├── apps\
 │   ├── web\                      # Vite + React + Tailwind + Radix UI + Lucide
 │   │   ├── src\
-│   │   │   ├── components\       # KPI cards, charts, prompt drawers, search
+│   │   │   ├── components\       # KPI cards, charts, prompt drawers, filters
 │   │   │   ├── hooks\            # useSessions, useSummary, useFilters
 │   │   │   └── App.tsx
 │   │   └── package.json
@@ -89,4 +89,4 @@ graph TD
 
 ### Phase 3: Modern Desktop Web Experience (pps/web)
 - React + Vite + Tailwind glassmorphic UI.
-- Interactive timeline, prompt full-text search, cost projection meters, and one-click IDE deep-linking.
+- Interactive timeline, date filtering, cost projection meters, and one-click IDE deep-linking.

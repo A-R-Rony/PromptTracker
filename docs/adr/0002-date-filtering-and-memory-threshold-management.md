@@ -1,5 +1,7 @@
 # 2. Date Filtering & Dynamic Memory Threshold Management
 
+> The date-filtering decision remains active. The RAM threshold and JSON spillover decision are superseded by ADR 0005 and must not be interpreted as a process-memory guarantee.
+
 We implemented flexible date filtering (CLI flags and interactive TUI presets) along with a dynamic RAM threshold manager (`SessionStorageManager`) that spills large payloads to disk cache (`~/.prompttracker/cache/`) when memory limits are reached.
 
 ## Context

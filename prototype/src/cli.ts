@@ -12,7 +12,7 @@ import { filterSessionsByDate, DateFilterOptions } from './dateFilter';
 import { SessionStorageManager } from './storage';
 
 const program = new Command();
-const storageManager = new SessionStorageManager(50); // 50MB RAM Threshold
+const storageManager = new SessionStorageManager(50); // Legacy content budget until SQLite cache replacement.
 
 program
   .name('prompttracker')

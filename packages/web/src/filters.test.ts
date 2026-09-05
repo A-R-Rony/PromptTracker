@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { searchSessions, filterSessionsByDatePreset } from './filters';
+import { filterSessionsByDatePreset } from './filters';
 import type { NormalizedSession } from '../../core/dist/types';
 
 function session(overrides: Partial<NormalizedSession> = {}): NormalizedSession {
@@ -17,59 +17,6 @@ function session(overrides: Partial<NormalizedSession> = {}): NormalizedSession 
     ...overrides
   };
 }
-
-describe('searchSessions', () => {
-  it('matches sessions by project name, case-insensitively', () => {
-    const sessions = [
-      session({ id: 'a', projectName: 'PromptTracker' }),
-      session({ id: 'b', projectName: 'BackendService' })
-    ];
-
-    const results = searchSessions(sessions, 'prompttracker');
-    assert.strictEqual(results.length, 1);
-    assert.strictEqual(results[0].id, 'a');
-  });
-
-  it('matches sessions by tool source and model name', () => {
-    const sessions = [
-      session({ id: 'a', toolSource: 'antigravity' }),
-      session({ id: 'b', model: 'gemini-3.7-flash' }),
-      session({ id: 'c', toolSource: 'kiro', model: 'claude-3-7-sonnet' })
-    ];
-
-    assert.strictEqual(searchSessions(sessions, 'antigravity').length, 1);
-    assert.strictEqual(searchSessions(sessions, 'antigravity')[0].id, 'a');
-
-    assert.strictEqual(searchSessions(sessions, 'gemini').length, 1);
-    assert.strictEqual(searchSessions(sessions, 'gemini')[0].id, 'b');
-
-    assert.strictEqual(searchSessions(sessions, 'kiro').length, 1);
-    assert.strictEqual(searchSessions(sessions, 'kiro')[0].id, 'c');
-  });
-
-  it('matches sessions by text inside any turn user prompt', () => {
-    const sessions = [
-      session({
-        id: 'a',
-        turns: [
-          { turnIndex: 1, timestamp: '2026-08-31T10:00:00.000Z', userPrompt: 'Implement the login form', tokens: { input: 10, output: 10, total: 20 } },
-          { turnIndex: 2, timestamp: '2026-08-31T10:05:00.000Z', userPrompt: 'Add validation', tokens: { input: 10, output: 10, total: 20 } }
-        ]
-      }),
-      session({ id: 'b', turns: [{ turnIndex: 1, timestamp: '2026-08-31T11:00:00.000Z', userPrompt: 'Refactor the database', tokens: { input: 10, output: 10, total: 20 } }] })
-    ];
-
-    const results = searchSessions(sessions, 'validation');
-    assert.strictEqual(results.length, 1);
-    assert.strictEqual(results[0].id, 'a');
-  });
-
-  it('returns all sessions for a blank query', () => {
-    const sessions = [session({ id: 'a' }), session({ id: 'b' })];
-    assert.strictEqual(searchSessions(sessions, '').length, 2);
-    assert.strictEqual(searchSessions(sessions, '   ').length, 2);
-  });
-});
 
 describe('filterSessionsByDatePreset', () => {
   const NOW = new Date('2026-08-31T12:00:00.000Z').getTime();

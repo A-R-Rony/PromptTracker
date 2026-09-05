@@ -1,5 +1,7 @@
 # 3. Production Monorepo Toolchain, SQLite Persistence, and Dual Distribution
 
+> The persistence decision is refined by ADR 0005: Prompt Lens SQLite is a disposable derived cache and does not provide zero-RAM operation or a strict process-memory bound.
+
 We decided to structure PromptTracker as a pnpm + Turborepo monorepo with local SQLite persistence and dual distribution (CLI on npm registry and live web demo deployed to Vercel).
 
 ## Context
@@ -11,7 +13,7 @@ Transitioning PromptTracker from a prototype to a production product requires:
 
 ## Decision
 1. **Workspace Toolchain**: Use `pnpm` workspaces with `Turborepo` (`turbo.json`) for pipeline orchestration and incremental build/test caching.
-2. **Persistence Engine**: Use embedded local SQLite (`~/.prompttracker/data.db`) managed by `packages/core`. This enables fast SQL aggregations, date indexing, and zero-RAM overhead when querying historical metrics.
+2. **Persistence Engine**: Use embedded local SQLite (`~/.prompttracker/data.db`) managed by `packages/core`. This enables indexed aggregations and date queries without requiring complete Turn bodies to be loaded.
 3. **Dual Distribution & Deployment**:
    - **CLI**: Published to npm as `prompttracker` (also aliased to `promptburn`) with `bin` execution.
    - **Web Demo**: Deployed to Vercel via GitHub Actions with a standalone mock demo mode when disconnected from local servers.

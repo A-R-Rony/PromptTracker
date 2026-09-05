@@ -50,9 +50,6 @@
     .scrollable::-webkit-scrollbar { width: 6px; }
     .scrollable::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
     
-    .filter-input { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-card); padding: 0.6rem 1rem; border-radius: 8px; color: #fff; font-family: inherit; font-size: 0.9rem; margin-bottom: 1rem; }
-    .filter-input:focus { outline: none; border-color: var(--accent-indigo); }
-    
     .session-item { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-card); border-radius: 12px; padding: 1.1rem; margin-bottom: 0.8rem; transition: all 0.2s ease; cursor: pointer; }
     .session-item:hover { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.2); }
     .session-item.selected { border-color: var(--accent-cyan); background: rgba(0, 242, 254, 0.08); box-shadow: 0 0 15px rgba(0, 242, 254, 0.15); }
@@ -112,7 +109,6 @@
     <div class="main-grid">
       <div class="section-card">
         <h2 style="font-size: 1.2rem; margin-bottom: 0.8rem;">Sessions & Prompts (<span id="sessCount">0</span>)</h2>
-        <input type="text" id="searchInput" class="filter-input" placeholder="Search prompts text, date, tools..." oninput="filterSessions()">
         <div class="scrollable" id="sessionsList">
           <div style="color: var(--text-muted); text-align: center; padding: 2rem;">Loading sessions...</div>
         </div>
@@ -222,17 +218,6 @@
         body: JSON.stringify({ sessionId })
       });
     } catch (e) { console.error(e); }
-  }
-
-  function filterSessions() {
-    const q = document.getElementById('searchInput').value.toLowerCase();
-    const filtered = allSessions.filter(s =>
-      s.projectName.toLowerCase().includes(q) ||
-      s.toolSource.toLowerCase().includes(q) ||
-      s.date.includes(q) ||
-      s.turns.some(t => t.userPrompt.toLowerCase().includes(q))
-    );
-    renderSessions(filtered);
   }
 
   function escapeHtml(str) {

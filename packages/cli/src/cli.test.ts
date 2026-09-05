@@ -1,10 +1,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
 import { NormalizedSession, exportSessionToMarkdown } from '@prompttracker/core';
 import { filterSessionsByDate, parseRelativeDate } from './dateFilter.js';
+import { filterSessionsByScope } from './scope.js';
+import { program } from './cli.js';
 
 describe('CLI Package Utilities', () => {
   const sampleSessions: NormalizedSession[] = [
@@ -15,17 +15,15 @@ describe('CLI Package Utilities', () => {
       timestamp: '2026-08-31T10:00:00.000Z',
       date: '2026-08-31',
       model: 'gemini-3.7-flash',
-      turns: [
-        {
-          turnIndex: 1,
-          timestamp: '2026-08-31T10:00:00.000Z',
-          userPrompt: 'Implement date filtering',
-          assistantSummary: 'Done implementing',
-          assistantResponse: 'Full response with code',
-          toolCalls: [{ name: 'write_to_file', args: { TargetFile: 'cli.ts' } }],
-          tokens: { input: 100, output: 200, total: 300 }
-        }
-      ],
+      turns: [{
+        turnIndex: 1,
+        timestamp: '2026-08-31T10:00:00.000Z',
+        userPrompt: 'Implement date filtering',
+        assistantSummary: 'Done implementing',
+        assistantResponse: 'Full response with code',
+        toolCalls: [{ name: 'write_to_file', args: { TargetFile: 'cli.ts' } }],
+        tokens: { input: 100, output: 200, total: 300 }
+      }],
       totalTokens: { input: 100, output: 200, total: 300 },
       estimatedCostUsd: 0.0005
     },
@@ -36,15 +34,13 @@ describe('CLI Package Utilities', () => {
       timestamp: '2026-08-25T10:00:00.000Z',
       date: '2026-08-25',
       model: 'claude-3-7-sonnet',
-      turns: [
-        {
-          turnIndex: 1,
-          timestamp: '2026-08-25T10:00:00.000Z',
-          userPrompt: 'Refactor SQL database',
-          assistantSummary: 'SQL refactored',
-          tokens: { input: 500, output: 500, total: 1000 }
-        }
-      ],
+      turns: [{
+        turnIndex: 1,
+        timestamp: '2026-08-25T10:00:00.000Z',
+        userPrompt: 'Refactor SQL database',
+        assistantSummary: 'SQL refactored',
+        tokens: { input: 500, output: 500, total: 1000 }
+      }],
       totalTokens: { input: 500, output: 500, total: 1000 },
       estimatedCostUsd: 0.009
     }
@@ -75,7 +71,42 @@ describe('CLI Package Utilities', () => {
     assert.ok(content.includes('Tool Invocations (1)'));
     assert.ok(content.includes('write_to_file'));
 
-    // Clean up test export
     try { fs.unlinkSync(exportedPath); } catch {}
+  });
+
+  it('filters Sessions by explicit project and current-project scope', () => {
+    const withPaths = sampleSessions.map((session, index) => ({
+      ...session,
+      projectPath: index === 0 ? 'D:/work/PromptTracker' : 'D:/work/BackendService'
+    }));
+
+    const explicit = filterSessionsByScope(withPaths, { project: 'backend' }, 'D:/work/PromptTracker');
+    assert.deepStrictEqual(explicit.sessions.map(session => session.id), ['sess-2']);
+    assert.strictEqual(explicit.scopeLabel, 'Project: backend');
+
+    const local = filterSessionsByScope(withPaths, {}, 'D:/work/PromptTracker');
+    assert.deepStrictEqual(local.sessions.map(session => session.id), ['sess-1']);
+    assert.strictEqual(local.scopeLabel, 'Project: PromptTracker');
+
+    const global = filterSessionsByScope(withPaths, { all: true }, 'D:/work/PromptTracker');
+    assert.strictEqual(global.sessions.length, 2);
+    assert.strictEqual(global.scopeLabel, 'All Projects');
+  });
+});
+
+describe('Prompt Lens command surface', () => {
+  it('does not expose full-text search', () => {
+    const commandNames = program.commands.map(command => command.name());
+
+    assert.ok(!commandNames.includes('search'));
+    assert.doesNotMatch(program.helpInformation(), /\bsearch\b/i);
+  });
+
+  it('retains date, project, and scope navigation options', () => {
+    const optionNames = program.options.flatMap(option => option.attributeName());
+
+    assert.ok(optionNames.includes('date'));
+    assert.ok(optionNames.includes('project'));
+    assert.ok(optionNames.includes('all'));
   });
 });

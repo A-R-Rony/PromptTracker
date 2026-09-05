@@ -3,14 +3,9 @@ import { Box, Text } from 'ink';
 
 interface FooterProps {
   currentScreen: 'list' | 'detail';
-  isSearchActive: boolean;
-  searchQuery: string;
 }
 
-export const Footer: React.FC<FooterProps> = ({
-  currentScreen,
-  isSearchActive,
-}) => {
+export const Footer: React.FC<FooterProps> = ({ currentScreen }) => {
   return (
     <Box
       borderStyle="round"
@@ -41,11 +36,6 @@ export const Footer: React.FC<FooterProps> = ({
             {'[a] '}
           </Text>
           <Text color="gray">{'Toggle Scope  '}</Text>
-
-          <Text color="cyanBright" bold>
-            {'[/] '}
-          </Text>
-          <Text color="gray">{'Search  '}</Text>
 
           <Text color="cyanBright" bold>
             {'[o] '}

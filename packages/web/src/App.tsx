@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import type { NormalizedSession } from '../../core/dist/types';
 import { fetchSessions, fetchSummary, openSessionInIDE, TelemetrySummary } from './api';
-import { filterSessionsByDatePreset, searchSessions, DatePreset } from './filters';
+import { filterSessionsByDatePreset, DatePreset } from './filters';
 import { formatTokens, formatCost } from './format';
 
 export const App: React.FC = () => {
   const [sessions, setSessions] = useState<NormalizedSession[]>([]);
   const [summary, setSummary] = useState<TelemetrySummary | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [datePreset, setDatePreset] = useState<DatePreset>('all');
   const [loading, setLoading] = useState(true);
   const [openingIDE, setOpeningIDE] = useState(false);
@@ -44,8 +43,7 @@ export const App: React.FC = () => {
     }
   };
 
-  const filteredByDate = filterSessionsByDatePreset(sessions, datePreset);
-  const filteredSessions = searchSessions(filteredByDate, searchQuery);
+  const filteredSessions = filterSessionsByDatePreset(sessions, datePreset);
   const selectedSession = sessions.find(s => s.id === selectedSessionId) || filteredSessions[0] || null;
 
   const maxDailyCost = Math.max(...(summary?.daily.map(d => d.totalCostUsd) || [1]), 0.01);
@@ -161,13 +159,6 @@ export const App: React.FC = () => {
         {/* Left Sidebar: Sessions List */}
         <div className="sessions-sidebar glass-panel">
           <div className="sidebar-header">
-            <input
-              type="text"
-              className="search-input"
-              placeholder="🔍 Search prompts, projects, or tools..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
             <div className="date-preset-pills">
               {(['all', 'today', 'yesterday', '7d', '30d'] as DatePreset[]).map((preset) => (
                 <button

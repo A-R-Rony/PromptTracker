@@ -29,3 +29,7 @@ _Avoid_: Usage stats, character count
 **Exported Transcript**:
 A human-readable Markdown document generated from a Session containing the full prompt history and un-truncated model responses for IDE viewing.
 _Avoid_: Export file, dump, log copy
+
+**Cached Content**:
+Full Turn content held in Prompt Lens's disposable local cache; it is not the application's total process memory usage.
+_Avoid_: RAM usage, memory usage, process memory
