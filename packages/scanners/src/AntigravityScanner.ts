@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { NormalizedSession, PromptTurn, ToolScanner, approximateTokens, estimateCost } from '../../core/dist';
+import { NormalizedSession, PromptTurn, ScanHints, ToolScanner, approximateTokens, estimateCost, fileSignals } from '../../core/dist';
 
 function cleanPromptText(raw: string): string {
   if (!raw) return '';
@@ -64,7 +64,7 @@ export class AntigravityScanner implements ToolScanner {
     this.customBaseDir = customBaseDir;
   }
 
-  async scan(): Promise<NormalizedSession[]> {
+  async scan(options?: ScanHints): Promise<NormalizedSession[]> {
     const sessions: NormalizedSession[] = [];
     const baseDir = this.customBaseDir || path.join(os.homedir(), '.gemini', 'antigravity-ide', 'brain');
 
@@ -79,6 +79,7 @@ export class AntigravityScanner implements ToolScanner {
 
         try {
           const stats = fs.statSync(transcriptPath);
+          if (options?.shouldSkipFile?.(transcriptPath, { mtimeMs: stats.mtimeMs, sizeBytes: stats.size })) continue;
           const rawText = fs.readFileSync(transcriptPath, 'utf8');
           const rawLines = rawText.split('\n').filter(l => l.trim().length > 0);
 
@@ -177,7 +178,8 @@ export class AntigravityScanner implements ToolScanner {
               turns,
               totalTokens,
               estimatedCostUsd: estimateCost(currentModel, totalTokens),
-              rawFilePath: transcriptPath
+              rawFilePath: transcriptPath,
+              sourceSignals: fileSignals(stats)
             });
           }
         } catch {}

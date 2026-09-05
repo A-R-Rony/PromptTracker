@@ -1,7 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { NormalizedSession, PromptTurn, ToolScanner, approximateTokens, estimateCost } from '../../core/dist';
+import { createHash } from 'crypto';
+import { NormalizedSession, PromptTurn, ScanHints, ToolScanner, approximateTokens, estimateCost, fileSignals } from '../../core/dist';
 
 function extractText(content: any): string {
   if (!content) return '';
@@ -28,7 +29,7 @@ export class CodexScanner implements ToolScanner {
     this.customBaseDir = customBaseDir;
   }
 
-  async scan(): Promise<NormalizedSession[]> {
+  async scan(options?: ScanHints): Promise<NormalizedSession[]> {
     const sessions: NormalizedSession[] = [];
     const codexDir = this.customBaseDir || path.join(os.homedir(), '.codex');
     const chatgptHistory = path.join(os.homedir(), '.chatgpt', 'history.json');
@@ -47,8 +48,10 @@ export class CodexScanner implements ToolScanner {
                 scanDir(fullPath);
               }
             } else if (file.endsWith('.jsonl')) {
+              if (options?.shouldSkipFile?.(fullPath, { mtimeMs: stat.mtimeMs, sizeBytes: stat.size })) continue;
               this.parseCodexJsonlSession(fullPath, sessions);
             } else if (file.endsWith('.json') && !file.startsWith('.') && file !== 'config.json') {
+              if (options?.shouldSkipFile?.(fullPath, { mtimeMs: stat.mtimeMs, sizeBytes: stat.size })) continue;
               this.parseCodexJsonSession(fullPath, sessions);
             }
           }
@@ -166,7 +169,8 @@ export class CodexScanner implements ToolScanner {
           turns,
           totalTokens,
           estimatedCostUsd: estimateCost(model, totalTokens),
-          rawFilePath: filePath
+          rawFilePath: filePath,
+          sourceSignals: fileSignals(stats)
         });
       }
     } catch {}
@@ -245,7 +249,8 @@ export class CodexScanner implements ToolScanner {
           turns,
           totalTokens,
           estimatedCostUsd: estimateCost(model, totalTokens),
-          rawFilePath: filePath
+          rawFilePath: filePath,
+          sourceSignals: fileSignals(stats)
         });
       }
     } catch {}
@@ -300,7 +305,8 @@ export class CodexScanner implements ToolScanner {
             source: isEstimated ? 'estimated_heuristic' : 'provider_telemetry'
           },
           estimatedCostUsd: estimateCost(model, { input: inTok, output: outTok, total: inTok + outTok }),
-          rawFilePath: filePath
+          rawFilePath: filePath,
+          sourceSignals: { fingerprint: createHash('sha256').update(JSON.stringify(item)).digest('hex') }
         });
       }
     } catch {}

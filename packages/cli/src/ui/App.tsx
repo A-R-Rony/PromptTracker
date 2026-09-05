@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Text, useInput, useApp } from 'ink';
-import { NormalizedSession, PromptTurn, SessionStorageManager, exportSessionToMarkdown } from '@prompttracker/core';
+import { PromptTurn, SessionMetadata, SessionStorageManager, exportSessionToMarkdown, withTurns } from '@prompttracker/core';
 import { filterSessionsByDate, DateFilterOptions } from '../dateFilter.js';
 import { Header } from './Header.js';
 import { SessionList } from './SessionList.js';
@@ -9,17 +9,19 @@ import { Footer } from './Footer.js';
 import { exec } from 'child_process';
 
 interface AppProps {
-  initialSessions: NormalizedSession[];
-  rawAllSessions: NormalizedSession[];
+  initialSessions: SessionMetadata[];
+  allSessions: SessionMetadata[];
   initialScopeLabel: string;
   storageManager: SessionStorageManager;
+  loadTurns?: (session: SessionMetadata) => Promise<PromptTurn[]>;
 }
 
 export const App: React.FC<AppProps> = ({
   initialSessions,
-  rawAllSessions,
+  allSessions,
   initialScopeLabel,
   storageManager,
+  loadTurns
 }) => {
   const { exit } = useApp();
 
@@ -35,7 +37,7 @@ export const App: React.FC<AppProps> = ({
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   // Active pool of sessions depending on scope toggle
-  const sessionPool = isAllProjects ? rawAllSessions : initialSessions;
+  const sessionPool = isAllProjects ? allSessions : initialSessions;
 
   // Filtered sessions
   const filteredSessions = useMemo(() => {
@@ -44,7 +46,7 @@ export const App: React.FC<AppProps> = ({
 
   // Aggregate metrics
   const totalPrompts = useMemo(
-    () => filteredSessions.reduce((acc, s) => acc + (s.turns?.length || 0), 0),
+    () => filteredSessions.reduce((acc, s) => acc + s.turnCount, 0),
     [filteredSessions]
   );
   const totalTokens = useMemo(
@@ -60,13 +62,20 @@ export const App: React.FC<AppProps> = ({
 
   // Load turns when selected session changes
   useEffect(() => {
-    if (selectedSession) {
-      const fullTurns = storageManager.loadFullTurns(selectedSession);
-      setLoadedTurns(fullTurns);
-    } else {
+    if (!selectedSession) {
       setLoadedTurns([]);
+      return;
     }
-  }, [selectedSession, storageManager]);
+    let cancelled = false;
+    const loader = (async () => {
+      if (loadTurns) return loadTurns(selectedSession);
+      return storageManager.loadFullTurns(selectedSession);
+    })();
+    loader
+      .then(fullTurns => { if (!cancelled) setLoadedTurns(fullTurns); })
+      .catch(() => { if (!cancelled) setLoadedTurns([]); });
+    return () => { cancelled = true; };
+  }, [selectedSession, storageManager, loadTurns]);
 
   // Keep index within bounds
   useEffect(() => {
@@ -75,9 +84,9 @@ export const App: React.FC<AppProps> = ({
     }
   }, [filteredSessions.length, selectedIndex]);
 
-  const openInEditor = (session: NormalizedSession) => {
-    session.turns = loadedTurns;
-    const mdPath = exportSessionToMarkdown(session);
+  const openInEditor = (session: SessionMetadata) => {
+    const completeSession = withTurns(session, loadedTurns);
+    const mdPath = exportSessionToMarkdown(completeSession);
     const cmd = process.platform === 'win32' ? `start "" "${mdPath}"` : `open "${mdPath}"`;
     exec(cmd, (err) => {
       if (err) exec(`code "${mdPath}"`);

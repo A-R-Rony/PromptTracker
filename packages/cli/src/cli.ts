@@ -5,14 +5,19 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import * as fs from 'fs';
-import { NormalizedSession, SessionStorageManager, exportSessionToMarkdown } from '@prompttracker/core';
+import { NormalizedSession, SessionMetadata, SessionStorageManager, SyncReport, exportSessionToMarkdown, syncSessions, withTurns } from '@prompttracker/core';
 import { ScannerRegistry } from '@prompttracker/scanners';
 import { filterSessionsByDate, DateFilterOptions } from './dateFilter.js';
 import { filterSessionsByScope } from './scope.js';
+import { loadTurnsForSession } from './sessionLoader.js';
 import { App } from './ui/App.js';
 
 const program = new Command();
-const storageManager = new SessionStorageManager(50); // Legacy content budget until SQLite cache replacement.
+let activeStorageManager: SessionStorageManager | undefined;
+function storageManager(): SessionStorageManager {
+  activeStorageManager ??= new SessionStorageManager();
+  return activeStorageManager;
+}
 
 program
   .name('prompt-lens')
@@ -25,15 +30,12 @@ async function loadSessions(options: {
   date?: string;
   since?: string;
   until?: string;
-}): Promise<{ sessions: NormalizedSession[]; rawSessions: NormalizedSession[]; scopeLabel: string; dateLabel: string }> {
-  const registry = new ScannerRegistry();
-  const rawSessions = await registry.scanAll();
+}): Promise<{ sessions: SessionMetadata[]; allSessions: SessionMetadata[]; scopeLabel: string; dateLabel: string }> {
+  const cache = storageManager();
+  await syncCacheWithSources(cache);
+  const allSessions = cache.listSessions();
 
-  for (const s of rawSessions) {
-    storageManager.manageSessionMemory(s);
-  }
-
-  const scoped = filterSessionsByScope(rawSessions, options);
+  const scoped = filterSessionsByScope(allSessions, options);
   const sessions = scoped.sessions;
   const scopeLabel = scoped.scopeLabel;
 
@@ -49,10 +51,19 @@ async function loadSessions(options: {
 
   return {
     sessions: dateFilteredSessions,
-    rawSessions,
+    allSessions,
     scopeLabel,
     dateLabel,
   };
+}
+
+async function syncCacheWithSources(cache: SessionStorageManager): Promise<SyncReport> {
+  const registry = new ScannerRegistry();
+  const report = await syncSessions(cache, registry.listScanners());
+  for (const failure of report.failedSources) {
+    console.error(chalk.yellow(`⚠ Could not read ${failure.name} source: ${failure.error}`));
+  }
+  return report;
 }
 
 // 1. Default Action: Launch Interactive TUI or Non-Interactive Table
@@ -64,7 +75,7 @@ export async function runScan(options: {
   until?: string;
   noInteractive?: boolean;
 }) {
-  const { sessions, rawSessions, scopeLabel } = await loadSessions(options);
+  const { sessions, allSessions, scopeLabel } = await loadSessions(options);
 
   if (options.noInteractive) {
     printTableList(sessions, scopeLabel);
@@ -76,14 +87,15 @@ export async function runScan(options: {
   render(
     React.createElement(App, {
       initialSessions: sessions,
-      rawAllSessions: rawSessions,
+      allSessions,
       initialScopeLabel: scopeLabel,
-      storageManager,
+      storageManager: storageManager(),
+      loadTurns: (session) => loadTurnsForSession(storageManager(), session)
     })
   );
 }
 
-function printTableList(sessions: NormalizedSession[], scopeLabel: string) {
+function printTableList(sessions: SessionMetadata[], scopeLabel: string) {
   console.log(chalk.cyan.bold(`\n📊 [${scopeLabel}] AI Coding Sessions List\n`));
 
   const table = new Table({
@@ -130,7 +142,7 @@ program
     for (const s of sessions) {
       totalTokens += s.totalTokens.total;
       totalCost += s.estimatedCostUsd || 0;
-      totalPrompts += s.turns?.length || 1;
+      totalPrompts += s.turnCount;
 
       // By tool
       const tool = s.toolSource || 'unknown';
@@ -210,20 +222,22 @@ program
       const found = sessions.find((s) => s.id === sessionId || s.projectName.includes(sessionId));
       if (!found) {
         console.error(chalk.red(`Session "${sessionId}" not found.`));
+        process.exitCode = 1;
         return;
       }
       target = found;
     }
 
-    target.turns = storageManager.loadFullTurns(target);
+    const completeTarget: NormalizedSession = withTurns(target,
+      await loadTurnsForSession(storageManager(), target));
 
     if (opts.format === 'json') {
-      const jsonContent = JSON.stringify(target, null, 2);
+      const jsonContent = JSON.stringify(completeTarget, null, 2);
       const outPath = opts.out || `./session-${target.date}-${target.toolSource}.json`;
       fs.writeFileSync(outPath, jsonContent, 'utf-8');
       console.log(chalk.green(`✓ Exported session to JSON: ${outPath}`));
     } else {
-      const mdPath = exportSessionToMarkdown(target);
+      const mdPath = exportSessionToMarkdown(completeTarget);
       if (opts.out) {
         fs.copyFileSync(mdPath, opts.out);
         console.log(chalk.green(`✓ Exported session to Markdown: ${opts.out}`));
@@ -255,5 +269,9 @@ const isMain = process.argv[1] && (
 );
 
 if (isMain) {
-  program.parse(process.argv);
+  program.parseAsync(process.argv).catch(error => {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(chalk.red(`Prompt Lens failed: ${message}`));
+    process.exitCode = 1;
+  });
 }

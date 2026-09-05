@@ -1,91 +1,94 @@
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it, afterEach } from 'node:test';
 import assert from 'node:assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { SessionStorageManager } from './storage';
+import { SessionStorageError, SessionStorageManager } from './storage';
 import { NormalizedSession } from './types';
 
-describe('SessionStorageManager (Threshold & Disk Spillover)', () => {
-  const testCacheDir = path.join(os.homedir(), '.prompttracker', 'cache');
+const temporaryDirectories: string[] = [];
+function databasePath(): string {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'prompt-lens-sqlite-'));
+  temporaryDirectories.push(directory);
+  return path.join(directory, 'data.db');
+}
+function session(overrides: Partial<NormalizedSession> = {}): NormalizedSession {
+  return {
+    id: 'source/session:1', toolSource: 'codex', projectName: 'PromptTracker',
+    projectPath: 'D:/work/PromptTracker', timestamp: '2026-09-05T08:00:00.000Z',
+    date: '2026-09-05', model: 'gpt-5',
+    turns: [{ turnIndex: 1, timestamp: '2026-09-05T08:00:00.000Z',
+      userPrompt: 'Store this complete prompt', assistantSummary: 'Stored it',
+      assistantResponse: 'A complete response that must survive a restart.',
+      toolCalls: [{ name: 'apply_patch', args: { patch: 'full payload' } }],
+      tokens: { input: 11, output: 13, cached: 2, reasoning: 3, total: 29 } }],
+    totalTokens: { input: 11, output: 13, cached: 2, reasoning: 3, total: 29 },
+    estimatedCostUsd: 0.0042, rawFilePath: 'D:/agent-data/session.jsonl', ...overrides
+  };
+}
+afterEach(() => {
+  for (const directory of temporaryDirectories.splice(0)) fs.rmSync(directory, { recursive: true, force: true });
+});
 
-  beforeEach(() => {
-    if (fs.existsSync(testCacheDir)) {
-      const files = fs.readdirSync(testCacheDir);
-      for (const f of files) {
-        if (f.startsWith('test-session-')) {
-          fs.unlinkSync(path.join(testCacheDir, f));
-        }
-      }
-    }
+describe('SQLite Session cache', () => {
+  it('lists Session metadata without complete Turns and lazily restores full-fidelity content after restart', () => {
+    const dbPath = databasePath();
+    const original = session();
+    const firstRun = new SessionStorageManager({ databasePath: dbPath });
+    firstRun.upsertSession(original);
+    firstRun.close();
+    const secondRun = new SessionStorageManager({ databasePath: dbPath });
+    const cached = secondRun.listSessions();
+    assert.strictEqual(cached.length, 1);
+    assert.strictEqual(cached[0].projectName, 'PromptTracker');
+    assert.strictEqual(cached[0].turnCount, 1);
+    assert.strictEqual(cached[0].hasCachedContent, true);
+    assert.strictEqual(cached[0].ingestionState, 'complete');
+    assert.deepStrictEqual(secondRun.loadFullTurns(cached[0]), original.turns);
+    secondRun.close();
   });
 
-  it('keeps session in RAM when total memory is below threshold', () => {
-    const manager = new SessionStorageManager(50); // 50MB budget
-    const session: NormalizedSession = {
-      id: 'test-session-1',
-      toolSource: 'antigravity',
-      projectName: 'Test Project',
-      timestamp: new Date().toISOString(),
-      date: '2026-08-31',
-      model: 'gemini-3.7-flash',
-      turns: [
-        {
-          turnIndex: 1,
-          timestamp: new Date().toISOString(),
-          userPrompt: 'Hello AI assistant',
-          assistantSummary: 'Hello! How can I help you?',
-          assistantResponse: 'Hello! How can I help you today with your code?',
-          tokens: { input: 10, output: 20, total: 30 }
-        }
-      ],
-      totalTokens: { input: 10, output: 20, total: 30 },
-      estimatedCostUsd: 0.0001
-    };
-
-    manager.manageSessionMemory(session);
-    const summary = manager.getMemoryUsageSummary();
-
-    assert.strictEqual(summary.spilledCount, 0);
-    // Turns remain intact in memory
-    assert.strictEqual(session.turns[0].assistantResponse, 'Hello! How can I help you today with your code?');
+  it('upserts the same authoritative Session idempotently', () => {
+    const manager = new SessionStorageManager({ databasePath: databasePath() });
+    manager.upsertSession(session());
+    manager.upsertSession(session({ projectName: 'Renamed Project' }));
+    const cached = manager.listSessions();
+    assert.strictEqual(cached.length, 1);
+    assert.strictEqual(cached[0].projectName, 'Renamed Project');
+    assert.strictEqual(cached[0].totalTokens.total, 29);
+    assert.strictEqual(manager.loadFullTurns(cached[0]).length, 1);
+    manager.close();
   });
 
-  it('spills session turns to disk cache when memory exceeds threshold and rehydrates lazily', () => {
-    // Set a tiny budget of 0.0001 MB (~100 bytes) to force immediate spillover
-    const manager = new SessionStorageManager(0.0001);
+  it('can rebuild after its disposable database is deleted', () => {
+    const dbPath = databasePath();
+    const authoritative = session();
+    const first = new SessionStorageManager({ databasePath: dbPath });
+    first.upsertSession(authoritative);
+    first.close();
+    fs.rmSync(dbPath);
+    const rebuilt = new SessionStorageManager({ databasePath: dbPath });
+    assert.deepStrictEqual(rebuilt.listSessions(), []);
+    rebuilt.upsertSession(authoritative);
+    assert.strictEqual(rebuilt.listSessions().length, 1);
+    rebuilt.close();
+  });
 
-    const fullResponse = 'A'.repeat(500); // 500 chars = 1000 bytes
-    const session: NormalizedSession = {
-      id: 'test-session-spill',
-      toolSource: 'antigravity',
-      projectName: 'Large Project',
-      timestamp: new Date().toISOString(),
-      date: '2026-08-31',
-      model: 'gemini-3.7-flash',
-      turns: [
-        {
-          turnIndex: 1,
-          timestamp: new Date().toISOString(),
-          userPrompt: 'Generate a large component',
-          assistantSummary: 'Preview summary',
-          assistantResponse: fullResponse,
-          tokens: { input: 100, output: 500, total: 600 }
-        }
-      ],
-      totalTokens: { input: 100, output: 500, total: 600 },
-      estimatedCostUsd: 0.001
-    };
+  it('surfaces actionable database lifecycle failures', () => {
+    const parentFile = databasePath();
+    fs.writeFileSync(parentFile, 'not a directory');
+    assert.throws(
+      () => new SessionStorageManager({ databasePath: path.join(parentFile, 'data.db') }),
+      (error: unknown) => error instanceof SessionStorageError &&
+        error.message.includes('Unable to open Prompt Lens cache')
+    );
 
-    manager.manageSessionMemory(session);
-    const summary = manager.getMemoryUsageSummary();
-
-    assert.strictEqual(summary.spilledCount, 1);
-    // RAM turn is trimmed to preview size
-    assert.strictEqual(session.turns[0].assistantResponse, undefined);
-
-    // Lazy load rehydrates full turns from disk cache
-    const rehydratedTurns = manager.loadFullTurns(session);
-    assert.strictEqual(rehydratedTurns[0].assistantResponse, fullResponse);
+    const manager = new SessionStorageManager({ databasePath: databasePath() });
+    manager.close();
+    assert.throws(
+      () => manager.listSessions(),
+      (error: unknown) => error instanceof SessionStorageError &&
+        error.message === 'Unable to list cached Sessions'
+    );
   });
 });

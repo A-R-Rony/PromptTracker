@@ -1,10 +1,10 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { NormalizedSession, PromptTurn } from '@prompttracker/core';
+import { PromptTurn, SessionMetadata } from '@prompttracker/core';
 import { getToolBadge } from './SessionList.js';
 
 interface SessionDetailProps {
-  session: NormalizedSession;
+  session: SessionMetadata;
   turns: PromptTurn[];
   scrollIndex: number;
   maxVisibleTurns?: number;

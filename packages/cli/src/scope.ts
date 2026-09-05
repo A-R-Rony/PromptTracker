@@ -5,15 +5,15 @@ function normalizedPath(value: string): string {
   return value.replace(/\\/g, '/');
 }
 
-export function filterSessionsByScope(
-  rawSessions: NormalizedSession[],
+export function filterSessionsByScope<T extends Pick<NormalizedSession, 'projectPath' | 'projectName'>>(
+  sessions: T[],
   options: { all?: boolean; project?: string },
   cwd: string = process.cwd()
-): { sessions: NormalizedSession[]; scopeLabel: string } {
+): { sessions: T[]; scopeLabel: string } {
   if (options.project) {
     const query = options.project.toLowerCase();
     return {
-      sessions: rawSessions.filter(session =>
+      sessions: sessions.filter(session =>
         (session.projectPath?.toLowerCase().includes(query) ?? false) ||
         session.projectName.toLowerCase().includes(query)
       ),
@@ -22,7 +22,7 @@ export function filterSessionsByScope(
   }
 
   if (options.all) {
-    return { sessions: rawSessions, scopeLabel: 'All Projects' };
+    return { sessions, scopeLabel: 'All Projects' };
   }
 
   const currentDirectory = normalizedPath(cwd);
@@ -31,7 +31,7 @@ export function filterSessionsByScope(
   const parentName = path.basename(parentDirectory);
   const useParentScope = ['cli', 'prototype', 'packages'].includes(currentName.toLowerCase());
   const scopeDirectory = useParentScope ? parentDirectory : currentDirectory;
-  const matched = rawSessions.filter(session => {
+  const matched = sessions.filter(session => {
     if (!session.projectPath) return false;
     const projectPath = normalizedPath(session.projectPath).toLowerCase();
     const scope = scopeDirectory.toLowerCase();
@@ -44,7 +44,7 @@ export function filterSessionsByScope(
   });
 
   if (matched.length === 0) {
-    return { sessions: rawSessions, scopeLabel: 'All Projects (Global)' };
+    return { sessions, scopeLabel: 'All Projects (Global)' };
   }
 
   const displayName = useParentScope ? parentName : currentName;

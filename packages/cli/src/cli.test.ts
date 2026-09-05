@@ -1,7 +1,11 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import * as fs from 'fs';
-import { NormalizedSession, exportSessionToMarkdown } from '@prompttracker/core';
+import * as os from 'os';
+import * as path from 'path';
+import { spawnSync } from 'child_process';
+import { fileURLToPath } from 'url';
+import { NormalizedSession, SessionMetadata, exportSessionToMarkdown } from '@prompttracker/core';
 import { filterSessionsByDate, parseRelativeDate } from './dateFilter.js';
 import { filterSessionsByScope } from './scope.js';
 import { program } from './cli.js';
@@ -108,5 +112,63 @@ describe('Prompt Lens command surface', () => {
     assert.ok(optionNames.includes('date'));
     assert.ok(optionNames.includes('project'));
     assert.ok(optionNames.includes('all'));
+  });
+
+  it('lists persisted Session metadata from an isolated SQLite cache in a separate CLI process', () => {
+    const isolatedHome = fs.mkdtempSync(path.join(os.tmpdir(), 'prompt-lens-cli-'));
+    const databasePath = path.join(isolatedHome, '.prompttracker', 'data.db');
+    const transcriptDirectory = path.join(isolatedHome, '.gemini', 'antigravity-ide', 'brain',
+      'fixture-session', '.system_generated', 'logs');
+    fs.mkdirSync(transcriptDirectory, { recursive: true });
+    fs.writeFileSync(path.join(transcriptDirectory, 'transcript.jsonl'), [
+      JSON.stringify({ type: 'USER_INPUT', content: 'Cached CLI Project',
+        created_at: '2026-09-05T08:00:00.000Z' }),
+      JSON.stringify({ type: 'PLANNER_RESPONSE', content: 'complete response',
+        created_at: '2026-09-05T08:01:00.000Z' })
+    ].join('\n'));
+
+    const cliPath = fileURLToPath(new URL('./cli.js', import.meta.url));
+    const result = spawnSync(process.execPath, [cliPath, 'list', '--json', '--all'], {
+      encoding: 'utf8',
+      env: { ...process.env, HOME: isolatedHome, USERPROFILE: isolatedHome,
+        PROMPT_LENS_CACHE_PATH: databasePath }
+    });
+
+    assert.strictEqual(result.status, 0, result.stderr);
+    const sessions = JSON.parse(result.stdout) as SessionMetadata[];
+    assert.strictEqual(sessions.length, 1);
+    assert.strictEqual(sessions[0].projectName, 'Cached CLI Project');
+    assert.strictEqual(sessions[0].turnCount, 1);
+
+    const repeated = spawnSync(process.execPath, [cliPath, 'list', '--json', '--all'], {
+      encoding: 'utf8',
+      env: { ...process.env, HOME: isolatedHome, USERPROFILE: isolatedHome,
+        PROMPT_LENS_CACHE_PATH: databasePath }
+    });
+    assert.strictEqual(repeated.status, 0, repeated.stderr);
+    const repeatedSessions = JSON.parse(repeated.stdout) as SessionMetadata[];
+    assert.strictEqual(repeatedSessions.length, 1);
+    assert.deepStrictEqual(repeatedSessions, sessions);
+
+    fs.rmSync(path.join(isolatedHome, '.gemini'), { recursive: true, force: true });
+    const afterSourceRemoval = spawnSync(process.execPath, [cliPath, 'list', '--json', '--all'], {
+      encoding: 'utf8',
+      env: { ...process.env, HOME: isolatedHome, USERPROFILE: isolatedHome,
+        PROMPT_LENS_CACHE_PATH: databasePath }
+    });
+    assert.strictEqual(afterSourceRemoval.status, 0, afterSourceRemoval.stderr);
+    assert.strictEqual((JSON.parse(afterSourceRemoval.stdout) as SessionMetadata[]).length, 0);
+
+    const exportedPath = path.join(isolatedHome, 'exported-session.json');
+    const exportResult = spawnSync(process.execPath, [
+      cliPath, 'export', 'antigravity-fixture-session', '--format', 'json', '--out', exportedPath
+    ], {
+      encoding: 'utf8',
+      env: { ...process.env, HOME: isolatedHome, USERPROFILE: isolatedHome,
+        PROMPT_LENS_CACHE_PATH: databasePath }
+    });
+    assert.notStrictEqual(exportResult.status, 0, exportResult.stdout);
+    assert.ok(exportResult.stderr.includes('not found'));
+    fs.rmSync(isolatedHome, { recursive: true, force: true });
   });
 });

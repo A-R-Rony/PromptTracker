@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { NormalizedSession, PromptTurn, ToolScanner, approximateTokens, estimateCost } from '../../core/dist';
+import { NormalizedSession, PromptTurn, ScanHints, ToolScanner, approximateTokens, estimateCost, fileSignals } from '../../core/dist';
 
 function extractText(content: any): string {
   if (!content) return '';
@@ -28,7 +28,7 @@ export class KiroScanner implements ToolScanner {
     this.customBaseDir = customBaseDir;
   }
 
-  async scan(): Promise<NormalizedSession[]> {
+  async scan(options?: ScanHints): Promise<NormalizedSession[]> {
     const sessions: NormalizedSession[] = [];
     const kiroBase = this.customBaseDir || path.join(os.homedir(), '.kiro');
 
@@ -44,6 +44,7 @@ export class KiroScanner implements ToolScanner {
           if (stat.isDirectory()) {
             scanDir(fullPath);
           } else if (file.endsWith('.json') && !file.startsWith('.')) {
+            if (options?.shouldSkipFile?.(fullPath, { mtimeMs: stat.mtimeMs, sizeBytes: stat.size })) continue;
             this.parseKiroSessionFile(fullPath, sessions);
           }
         }
@@ -150,7 +151,8 @@ export class KiroScanner implements ToolScanner {
             turns,
             totalTokens,
             estimatedCostUsd: estimateCost(model, totalTokens),
-            rawFilePath: filePath
+            rawFilePath: filePath,
+            sourceSignals: fileSignals(stats)
           });
         }
       }

@@ -2,7 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { execSync } from 'child_process';
-import { NormalizedSession, PromptTurn, ToolScanner, TokenSource, approximateTokens, estimateCost } from '../../core/dist';
+import { createHash } from 'crypto';
+import { NormalizedSession, PromptTurn, ScanHints, ToolScanner, TokenSource, approximateTokens, estimateCost, fileSignals } from '../../core/dist';
 
 export class OpenCodeScanner implements ToolScanner {
   readonly name = 'opencode';
@@ -12,7 +13,7 @@ export class OpenCodeScanner implements ToolScanner {
     this.customBaseDir = customBaseDir;
   }
 
-  async scan(): Promise<NormalizedSession[]> {
+  async scan(options?: ScanHints): Promise<NormalizedSession[]> {
     const sessions: NormalizedSession[] = [];
     const home = os.homedir();
 
@@ -32,7 +33,10 @@ export class OpenCodeScanner implements ToolScanner {
         const files = fs.readdirSync(legacyDir);
         for (const file of files) {
           if (file.endsWith('.json')) {
-            this.parseLegacyJson(path.join(legacyDir, file), sessions);
+            const fullPath = path.join(legacyDir, file);
+            const stats = fs.statSync(fullPath);
+            if (options?.shouldSkipFile?.(fullPath, { mtimeMs: stats.mtimeMs, sizeBytes: stats.size })) continue;
+            this.parseLegacyJson(fullPath, sessions);
           }
         }
       } catch {}
@@ -138,6 +142,20 @@ export class OpenCodeScanner implements ToolScanner {
         };
         const cost = typeof row.cost === 'number' && row.cost > 0 ? +row.cost.toFixed(4) : estimateCost(cleanModel, totalTokens);
 
+        // One SQLite file holds many Sessions, so file mtime/size cannot safely
+        // attribute changes to a single Session; fingerprint the content instead.
+        const fingerprint = createHash('sha256').update(JSON.stringify({
+          title: row.title,
+          directory: row.directory,
+          model: row.model,
+          cost: row.cost,
+          tokens_input: row.tokens_input,
+          tokens_output: row.tokens_output,
+          tokens_reasoning: row.tokens_reasoning,
+          time_created: row.time_created,
+          turns
+        })).digest('hex');
+
         sessions.push({
           id: 'opencode-' + row.id,
           toolSource: 'opencode',
@@ -149,11 +167,16 @@ export class OpenCodeScanner implements ToolScanner {
           turns,
           totalTokens,
           estimatedCostUsd: cost,
-          rawFilePath: dbPath
+          rawFilePath: dbPath,
+          sourceSignals: { fingerprint }
         });
       }
     } catch (e) {
-      // Fallback silently if sqlite3 is not present
+      // An unreadable OpenCode database must fail the source rather than
+      // silently reporting an empty snapshot: incremental sync would otherwise
+      // reconcile every cached OpenCode Session away while the tool is
+      // temporarily unreadable.
+      throw e instanceof Error ? e : new Error(String(e));
     }
   }
 
@@ -283,7 +306,8 @@ export class OpenCodeScanner implements ToolScanner {
           turns,
           totalTokens,
           estimatedCostUsd: estimateCost(model, totalTokens),
-          rawFilePath: filePath
+            rawFilePath: filePath,
+            sourceSignals: fileSignals(stats)
         });
       }
     } catch {}

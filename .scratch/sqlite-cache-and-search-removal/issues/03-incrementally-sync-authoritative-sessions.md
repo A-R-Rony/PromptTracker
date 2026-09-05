@@ -4,17 +4,17 @@
 
 **Blocked by:** 02: Introduce the rebuildable SQLite Session cache.
 
-**Status:** ready-for-agent
+**Status:** complete
 
-- [ ] Claude, Codex, OpenCode, Antigravity, and Kiro are each represented by an isolated authoritative-source fixture in integration tests.
-- [ ] Source state records a stable source identity plus modification time and size, using a content fingerprint where those signals cannot safely detect changes.
-- [ ] A first scan indexes discovered Sessions and makes their metadata available to normal CLI operations.
-- [ ] A repeated scan skips unchanged source records and produces identical user-visible totals without duplication.
-- [ ] New source Sessions appear after an incremental scan.
-- [ ] Changed source Sessions replace stale metadata and content after an incremental scan.
-- [ ] When an authoritative Session disappears, reconciliation removes both its cached metadata and full Turn content.
-- [ ] Prompt Lens does not retain unique historical telemetry after every authoritative copy of a Session disappears.
-- [ ] When only cached Turn content was evicted but its authoritative Session remains, opening or exporting the Session can rehydrate it from the source and recache it when enabled.
-- [ ] OpenCode's existing SQLite database is read strictly as an OpenCode-owned source and remains separate from the Prompt Lens cache database.
-- [ ] Missing source tools, unavailable source locations, and malformed changed records produce bounded, actionable behavior without corrupting unrelated cached Sessions.
-- [ ] Integration tests cover first, repeated, new, changed, deleted, and rehydrated Session scenarios across process restarts.
+- [x] Claude, Codex, OpenCode, Antigravity, and Kiro are each represented by an isolated authoritative-source fixture in integration tests.
+- [x] Source state records a stable source identity plus modification time and size, using a content fingerprint where those signals cannot safely detect changes.
+- [x] A first scan indexes discovered Sessions and makes their metadata available to normal CLI operations.
+- [x] A repeated scan skips unchanged source records and produces identical user-visible totals without duplication.
+- [x] New source Sessions appear after an incremental scan.
+- [x] Changed source Sessions replace stale metadata and content after an incremental scan.
+- [x] When an authoritative Session disappears, reconciliation removes both its cached metadata and full Turn content.
+- [x] Prompt Lens does not retain unique historical telemetry after every authoritative copy of a Session disappears.
+- [x] When only cached Turn content was evicted but its authoritative Session remains, opening or exporting the Session can rehydrate it from the source and recache it when enabled.
+- [x] OpenCode's existing SQLite database is read strictly as an OpenCode-owned source and remains separate from the Prompt Lens cache database.
+- [x] Missing source tools, unavailable source locations, and malformed changed records produce bounded, actionable behavior without corrupting unrelated cached Sessions.
+- [x] Integration tests cover first, repeated, new, changed, deleted, and rehydrated Session scenarios across process restarts.

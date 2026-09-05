@@ -35,10 +35,10 @@ export function parseRelativeDate(expr: string): Date | null {
   return null;
 }
 
-export function filterSessionsByDate(
-  sessions: NormalizedSession[],
+export function filterSessionsByDate<T extends Pick<NormalizedSession, 'date' | 'timestamp'>>(
+  sessions: T[],
   options: DateFilterOptions
-): { filtered: NormalizedSession[]; label: string } {
+): { filtered: T[]; label: string } {
   let filtered = [...sessions];
   let label = '';
 

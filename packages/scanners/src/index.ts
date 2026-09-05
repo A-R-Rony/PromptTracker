@@ -24,6 +24,10 @@ export class ScannerRegistry {
     ];
   }
 
+  listScanners(): ToolScanner[] {
+    return [...this.scanners];
+  }
+
   async scanAll(): Promise<NormalizedSession[]> {
     const results: NormalizedSession[] = [];
     for (const scanner of this.scanners) {

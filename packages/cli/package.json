@@ -12,7 +12,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node dist/cli.test.js && node dist/ui/ui.test.js"
+    "test": "node dist/cli.test.js && node dist/cli.sync.test.js && node dist/ui/ui.test.js"
   },
   "dependencies": {
     "@prompttracker/core": "*",

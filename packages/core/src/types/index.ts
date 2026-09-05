@@ -20,6 +20,12 @@ export interface PromptTurn {
   tokens: TokenMetrics;
 }
 
+export interface SourceSignals {
+  mtimeMs?: number;
+  sizeBytes?: number;
+  fingerprint?: string;
+}
+
 export interface NormalizedSession {
   id: string;
   toolSource: 'antigravity' | 'opencode' | 'claude_code' | 'cursor' | 'cline' | 'aider' | 'codex' | 'kiro';
@@ -32,11 +38,22 @@ export interface NormalizedSession {
   totalTokens: TokenMetrics;
   estimatedCostUsd: number;
   rawFilePath?: string;
+  sourceSignals?: SourceSignals;
+}
+
+export interface SessionMetadata extends Omit<NormalizedSession, 'turns'> {
+  turnCount: number;
+  hasCachedContent: boolean;
+  ingestionState: 'complete' | 'content-evicted';
+}
+
+export interface ScanHints {
+  shouldSkipFile?(filePath: string, signals: { mtimeMs: number; sizeBytes: number }): boolean;
 }
 
 export interface ToolScanner {
-  readonly name: string;
-  scan(): Promise<NormalizedSession[]>;
+  readonly name: NormalizedSession['toolSource'];
+  scan(options?: ScanHints): Promise<NormalizedSession[]>;
 }
 
 export interface MetricAggregate {

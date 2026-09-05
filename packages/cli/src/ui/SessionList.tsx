@@ -1,9 +1,9 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { NormalizedSession } from '@prompttracker/core';
+import { SessionMetadata } from '@prompttracker/core';
 
 interface SessionListProps {
-  sessions: NormalizedSession[];
+  sessions: SessionMetadata[];
   selectedIndex: number;
   maxVisible?: number;
 }
