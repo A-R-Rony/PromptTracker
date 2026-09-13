@@ -1,7 +1,12 @@
 {
   "name": "@ar_rony1/prompt-lens",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Universal AI Coding Prompt & Token Usage Telemetry Tracker",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/A-R-Rony/PromptTracker"
+  },
+  "homepage": "https://github.com/A-R-Rony/PromptTracker#readme",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
