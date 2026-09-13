@@ -82,10 +82,10 @@ export const Header: React.FC<HeaderProps> = ({
             {'Prompts: '}
             <Text color="greenBright" bold>{totalPrompts.toLocaleString()}</Text>
             <Text color="gray">{' │ '}</Text>
-            {'Tokens: '}
+            {'Est. Tokens: '}
             <Text color="cyanBright" bold>{totalTokens.toLocaleString()}</Text>
             <Text color="gray">{' │ '}</Text>
-            {'Cost: '}
+            {'Est. Cost: '}
             <Text color="yellowBright" bold>{'$' + totalCost.toFixed(4)}</Text>
           </Text>
         </Box>

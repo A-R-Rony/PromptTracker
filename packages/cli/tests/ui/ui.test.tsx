@@ -47,6 +47,8 @@ describe('Prompt Lens terminal interface', () => {
 
     const frame = lastFrame() ?? '';
     assert.match(frame, /Project: PromptTracker/);
+    assert.match(frame, /Est\. Tokens:/);
+    assert.match(frame, /Est\. Cost:/);
     assert.doesNotMatch(frame, /PromptTr\.\.\./);
     cleanup();
   });

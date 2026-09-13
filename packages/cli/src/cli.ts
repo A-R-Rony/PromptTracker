@@ -12,6 +12,7 @@ import {
   SyncReport,
   exportSessionToMarkdown,
   migrateLegacyJsonCache,
+  syncModelPricingInBackground,
   syncSessions,
   withTurns
 } from '@prompttracker/core';
@@ -41,6 +42,7 @@ async function loadSessions(options: {
   until?: string;
   rescan?: boolean;
 }): Promise<{ sessions: SessionMetadata[]; allSessions: SessionMetadata[]; scopeLabel: string; dateLabel: string }> {
+  syncModelPricingInBackground();
   const cache = storageManager();
   await syncCacheWithSources(cache, { forceRescan: options.rescan });
   const allSessions = cache.listSessions();
