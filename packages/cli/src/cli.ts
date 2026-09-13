@@ -105,9 +105,13 @@ export async function runScan(options: {
     return;
   }
 
-  // Clear terminal screen and render Ink interactive TUI
-  console.clear();
-  render(
+  // Enter alternate screen buffer so terminal scrolling/resizing never duplicates history
+  if (process.stdout.isTTY) {
+    process.stdout.write('\x1b[?1049h');
+    process.stdout.write('\x1b[H');
+  }
+
+  const inkInstance = render(
     React.createElement(App, {
       initialSessions: sessions,
       allSessions,
@@ -116,6 +120,25 @@ export async function runScan(options: {
       loadTurns: (session) => loadTurnsForSession(storageManager(), session)
     })
   );
+
+  const cleanup = () => {
+    if (process.stdout.isTTY) {
+      process.stdout.write('\x1b[?1049l');
+    }
+  };
+
+  process.on('exit', cleanup);
+  process.on('SIGINT', () => {
+    cleanup();
+    process.exit(0);
+  });
+  process.on('SIGTERM', () => {
+    cleanup();
+    process.exit(0);
+  });
+
+  await inkInstance.waitUntilExit();
+  cleanup();
 }
 
 function printTableList(sessions: SessionMetadata[], scopeLabel: string) {

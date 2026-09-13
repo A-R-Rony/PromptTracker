@@ -25,6 +25,29 @@ export const App: React.FC<AppProps> = ({
 }) => {
   const { exit } = useApp();
 
+  // Resize listener to trigger clean screen repaint
+  const [, setTerminalDimensions] = useState<{ columns: number; rows: number }>({
+    columns: process.stdout.columns || 80,
+    rows: process.stdout.rows || 24,
+  });
+
+  useEffect(() => {
+    const onResize = () => {
+      if (process.stdout.isTTY) {
+        process.stdout.write('\x1b[2J\x1b[H');
+      }
+      setTerminalDimensions({
+        columns: process.stdout.columns || 80,
+        rows: process.stdout.rows || 24,
+      });
+    };
+
+    process.stdout.on('resize', onResize);
+    return () => {
+      process.stdout.off('resize', onResize);
+    };
+  }, []);
+
   // Navigation Screen State
   const [currentScreen, setCurrentScreen] = useState<'list' | 'detail'>('list');
   const [isAllProjects, setIsAllProjects] = useState<boolean>(!initialScopeLabel.startsWith('Project:'));

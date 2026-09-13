@@ -113,27 +113,29 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
               >
                 {/* User Prompt Row */}
                 <Box justifyContent="space-between" width="100%">
-                  <Box>
-                    <Text color="greenBright" bold>
-                      {`📑 [Turn #${turn.turnIndex}] `}
+                  <Box flexShrink={1} flexGrow={1} marginRight={1}>
+                    <Text color="greenBright" bold wrap="truncate">
+                      {`📑 [#${turn.turnIndex}] `}
                     </Text>
-                    <Text color="white">
-                      {cleanSingleLine(turn.userPrompt, 110)}
+                    <Text color="white" wrap="truncate">
+                      {cleanSingleLine(turn.userPrompt, 80)}
                     </Text>
                   </Box>
-                  <Text color={isEst ? 'yellow' : 'gray'}>
-                    {tokenBadge}
-                  </Text>
+                  <Box flexShrink={0}>
+                    <Text color={isEst ? 'yellow' : 'gray'} wrap="truncate">
+                      {tokenBadge}
+                    </Text>
+                  </Box>
                 </Box>
 
                 {/* 1-Line Agent Response */}
                 {responseText ? (
-                  <Box marginTop={0}>
-                    <Text color="magentaBright" bold>
-                      {'  ↳ 🤖 Agent: '}
+                  <Box marginTop={0} flexShrink={1} flexGrow={1}>
+                    <Text color="magentaBright" bold wrap="truncate">
+                      {'  ↳ 🤖 '}
                     </Text>
-                    <Text color="gray">
-                      {responseText}
+                    <Text color="gray" wrap="truncate">
+                      {cleanSingleLine(responseText, 90)}
                     </Text>
                   </Box>
                 ) : null}

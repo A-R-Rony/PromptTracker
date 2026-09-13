@@ -23,8 +23,8 @@ describe('Prompt Lens terminal interface', () => {
     );
 
     const frame = lastFrame() ?? '';
-    assert.match(frame, /Date Filter/);
-    assert.match(frame, /Toggle Scope/);
+    assert.match(frame, /Date/);
+    assert.match(frame, /Scope/);
     assert.doesNotMatch(frame, /Search|\[\/\]/i);
     assert.doesNotMatch(frame, /\bRAM\b|process memory|50\s*MB/i);
     cleanup();

@@ -39,31 +39,31 @@ export const Header: React.FC<HeaderProps> = ({
     >
       {/* Scope and Presets Row */}
       <Box justifyContent="space-between" width="100%">
-        <Box flexShrink={1} flexGrow={1} marginRight={2}>
-          <Text bold color="cyanBright">
+        <Box flexShrink={1} flexGrow={1} marginRight={1}>
+          <Text bold color="cyanBright" wrap="truncate">
             {'🔍 PROMPT-LENS'}
           </Text>
-          <Text color="gray">{' | '}</Text>
-          <Text color="white" bold>
+          <Text color="gray" wrap="truncate">{' │ '}</Text>
+          <Text color="white" bold wrap="truncate">
             {'Scope: '}
           </Text>
           <Text color={isAllProjects ? 'yellowBright' : 'greenBright'} bold wrap="truncate">
-            {projectName.length > 25 ? projectName.slice(0, 22) + '...' : projectName}
+            {projectName.length > 20 ? projectName.slice(0, 17) + '...' : projectName}
           </Text>
-          <Text color="gray">{' [a: toggle scope]'}</Text>
+          <Text color="gray" wrap="truncate">{' [a]'}</Text>
         </Box>
 
         {/* Date Filter Pills */}
         <Box flexShrink={0}>
-          <Text color="gray">{'Filters: '}</Text>
           {presets.map((p) => {
             const isActive = datePreset === p.value;
             return (
-              <Box key={p.value} marginRight={1}>
+              <Box key={p.value} marginLeft={1}>
                 <Text
                   color={isActive ? 'black' : 'cyan'}
                   backgroundColor={isActive ? 'cyanBright' : undefined}
                   bold={isActive}
+                  wrap="truncate"
                 >
                   {`[${p.key}] ${p.label}`}
                 </Text>
@@ -74,22 +74,17 @@ export const Header: React.FC<HeaderProps> = ({
       </Box>
 
       {/* Aggregate Metrics Bar */}
-      <Box marginTop={0} justifyContent="space-between" width="100%">
-        <Box>
-          <Text color="gray">{'  USAGE: '}</Text>
-          <Text color="white">{'Prompts: '}</Text>
-          <Text color="greenBright" bold>
-            {totalPrompts.toLocaleString()}
-          </Text>
-          <Text color="gray">{' │ '}</Text>
-          <Text color="white">{'Tokens: '}</Text>
-          <Text color="cyanBright" bold>
-            {totalTokens.toLocaleString()}
-          </Text>
-          <Text color="gray">{' │ '}</Text>
-          <Text color="white">{'Est. Cost: '}</Text>
-          <Text color="yellowBright" bold>
-            {'$' + totalCost.toFixed(4)}
+      <Box marginTop={0} width="100%">
+        <Box flexShrink={1} flexGrow={1}>
+          <Text color="white" wrap="truncate">
+            {'Prompts: '}
+            <Text color="greenBright" bold>{totalPrompts.toLocaleString()}</Text>
+            <Text color="gray">{' │ '}</Text>
+            {'Tokens: '}
+            <Text color="cyanBright" bold>{totalTokens.toLocaleString()}</Text>
+            <Text color="gray">{' │ '}</Text>
+            {'Cost: '}
+            <Text color="yellowBright" bold>{'$' + totalCost.toFixed(4)}</Text>
           </Text>
         </Box>
       </Box>
