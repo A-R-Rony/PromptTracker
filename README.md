@@ -11,14 +11,14 @@
 
 ## ⚡ Quick Start
 
-Run instantly with zero installation:
+Run instantly with zero installation from anywhere:
 ```bash
-npx @prompttracker/cli
+npx @ar_rony1/prompt-lens
 ```
 
 Or install globally:
 ```bash
-npm install -g @prompttracker/cli
+npm install -g @ar_rony1/prompt-lens
 ```
 
 Launch the interactive Terminal User Interface (TUI):
