@@ -13,12 +13,12 @@
 
 Run instantly with zero installation:
 ```bash
-npx prompt-lens
+npx @prompttracker/cli
 ```
 
 Or install globally:
 ```bash
-npm install -g prompt-lens
+npm install -g @prompttracker/cli
 ```
 
 Launch the interactive Terminal User Interface (TUI):

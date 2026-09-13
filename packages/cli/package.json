@@ -1,5 +1,5 @@
 {
-  "name": "prompt-lens",
+  "name": "@prompttracker/cli",
   "version": "0.1.0",
   "description": "Universal AI Coding Prompt & Token Usage Telemetry Tracker",
   "type": "module",
