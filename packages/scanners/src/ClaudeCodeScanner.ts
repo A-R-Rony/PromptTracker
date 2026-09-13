@@ -20,6 +20,21 @@ function extractText(content: any): string {
   return JSON.stringify(content);
 }
 
+function decodeClaudeProjectDir(dirName: string): string {
+  if (!dirName) return '';
+  try {
+    const decoded = decodeURIComponent(dirName);
+    if (decoded.includes('/') || decoded.includes('\\')) return decoded;
+  } catch {}
+  if (/^[a-zA-Z]--/.test(dirName)) {
+    return dirName.replace(/^([a-zA-Z])--/, '$1:/').replace(/--/g, '/');
+  }
+  if (/^-[a-zA-Z]-/.test(dirName)) {
+    return dirName.replace(/^-([a-zA-Z])-/, '$1:/').replace(/-/g, '/');
+  }
+  return '';
+}
+
 export class ClaudeCodeScanner implements ToolScanner {
   readonly name = 'claude_code';
   private customBaseDir?: string;
@@ -30,20 +45,30 @@ export class ClaudeCodeScanner implements ToolScanner {
 
   async scan(options?: ScanHints): Promise<NormalizedSession[]> {
     const sessions: NormalizedSession[] = [];
-    const claudeDir = this.customBaseDir || path.join(os.homedir(), '.claude');
+    const possibleDirs = this.customBaseDir
+      ? [this.customBaseDir]
+      : [
+          path.join(os.homedir(), '.claude'),
+          path.join(os.homedir(), '.config', 'claude'),
+          process.env.APPDATA ? path.join(process.env.APPDATA, 'claude') : ''
+        ].filter(Boolean).filter(d => fs.existsSync(d));
 
-    if (!fs.existsSync(claudeDir)) return sessions;
+    if (possibleDirs.length === 0) return sessions;
+
+    const seenFiles = new Set<string>();
 
     const scanDir = (dir: string) => {
       try {
         const files = fs.readdirSync(dir);
         for (const file of files) {
           const fullPath = path.join(dir, file);
+          if (seenFiles.has(fullPath)) continue;
           const stat = fs.statSync(fullPath);
 
           if (stat.isDirectory()) {
             scanDir(fullPath);
           } else if (file.endsWith('.jsonl') || file.endsWith('.json')) {
+            seenFiles.add(fullPath);
             if (options?.shouldSkipFile?.(fullPath, { mtimeMs: stat.mtimeMs, sizeBytes: stat.size })) continue;
             this.parseClaudeFile(fullPath, sessions);
           }
@@ -51,7 +76,9 @@ export class ClaudeCodeScanner implements ToolScanner {
       } catch {}
     };
 
-    scanDir(claudeDir);
+    for (const base of possibleDirs) {
+      scanDir(base);
+    }
     return sessions;
   }
 
@@ -136,6 +163,12 @@ export class ClaudeCodeScanner implements ToolScanner {
           isEstimated,
           source: isEstimated ? ('estimated_heuristic' as const) : ('provider_telemetry' as const)
         };
+        if (!detectedCwd) {
+          const parentFolder = path.basename(path.dirname(filePath));
+          const decoded = decodeClaudeProjectDir(parentFolder);
+          if (decoded) detectedCwd = decoded;
+        }
+
         const projectName = detectedCwd ? path.basename(detectedCwd) : path.basename(path.dirname(filePath));
 
         sessions.push({

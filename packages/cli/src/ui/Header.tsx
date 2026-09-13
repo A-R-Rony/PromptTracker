@@ -40,17 +40,19 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Scope and Presets Row */}
       <Box justifyContent="space-between" width="100%">
         <Box flexShrink={1} flexGrow={1} marginRight={1}>
-          <Text bold color="cyanBright" wrap="truncate">
-            {'🔍 PROMPT-LENS'}
+          <Text wrap="truncate">
+            <Text bold color="cyanBright">
+              {'🔍 PROMPT-LENS'}
+            </Text>
+            <Text color="gray">{' │ '}</Text>
+            <Text color="white" bold>
+              {'Scope: '}
+            </Text>
+            <Text color={isAllProjects ? 'yellowBright' : 'greenBright'} bold>
+              {projectName}
+            </Text>
+            <Text color="gray">{' [a]'}</Text>
           </Text>
-          <Text color="gray" wrap="truncate">{' │ '}</Text>
-          <Text color="white" bold wrap="truncate">
-            {'Scope: '}
-          </Text>
-          <Text color={isAllProjects ? 'yellowBright' : 'greenBright'} bold wrap="truncate">
-            {projectName.length > 20 ? projectName.slice(0, 17) + '...' : projectName}
-          </Text>
-          <Text color="gray" wrap="truncate">{' [a]'}</Text>
         </Box>
 
         {/* Date Filter Pills */}

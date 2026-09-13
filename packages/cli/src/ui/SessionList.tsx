@@ -83,8 +83,6 @@ export const SessionList: React.FC<SessionListProps> = ({
         const promptSummary = (session.projectName || 'Session').replace(/[\r\n]+/g, ' ');
         const pathPart = session.projectPath ? ` [${session.projectPath.split(/[\\/]/).pop()}]` : '';
         const fullTitle = `${promptSummary}${pathPart}`;
-        const truncatedSummary =
-          fullTitle.length > 50 ? fullTitle.slice(0, 47) + '...' : fullTitle;
 
         const isEst = session.totalTokens.isEstimated;
         const tokenPrefix = isEst ? 'Est. ' : '';
@@ -98,19 +96,21 @@ export const SessionList: React.FC<SessionListProps> = ({
             width="100%"
           >
             <Box flexShrink={1} flexGrow={1} marginRight={1}>
-              <Text color={isSelected ? 'cyanBright' : 'gray'} bold={isSelected} wrap="truncate">
-                {isSelected ? '▶ ' : '  '}
-              </Text>
-              <Text color={isSelected ? 'white' : 'gray'} bold={isSelected} wrap="truncate">
-                {datePart}{' '}
-              </Text>
-              <Text color="gray">{'│ '}</Text>
-              <Text color={badge.color as any} bold wrap="truncate">
-                {`[${badge.label}] `}
-              </Text>
-              <Text color="gray">{'│ '}</Text>
-              <Text color={isSelected ? 'yellowBright' : 'white'} bold={isSelected} wrap="truncate">
-                {truncatedSummary}
+              <Text wrap="truncate">
+                <Text color={isSelected ? 'cyanBright' : 'gray'} bold={isSelected}>
+                  {isSelected ? '▶ ' : '  '}
+                </Text>
+                <Text color={isSelected ? 'white' : 'gray'} bold={isSelected}>
+                  {datePart}{' '}
+                </Text>
+                <Text color="gray">{'│ '}</Text>
+                <Text color={badge.color as any} bold>
+                  {`[${badge.label}] `}
+                </Text>
+                <Text color="gray">{'│ '}</Text>
+                <Text color={isSelected ? 'yellowBright' : 'white'} bold={isSelected}>
+                  {fullTitle}
+                </Text>
               </Text>
             </Box>
             <Box flexShrink={0}>

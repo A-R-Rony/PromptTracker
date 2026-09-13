@@ -56,6 +56,45 @@ function detectDynamicModel(rawText: string, defaultModel = 'gemini-3.7-flash'):
   return defaultModel;
 }
 
+function cleanPathString(p: string): string {
+  if (!p) return '';
+  return p
+    .replace(/\\n|\\r|\\t/g, ' ')
+    .replace(/["'`<>]/g, '')
+    .replace(/\\\\/g, '/')
+    .replace(/\\/g, '/')
+    .replace(/\/+/g, '/')
+    .replace(/\/+$/, '')
+    .trim();
+}
+
+function extractAntigravityWorkspace(rawText: string): string {
+  if (!rawText) return '';
+
+  // 1. Check <user_information> workspace mapping (e.g., "d:\PetProjects\PromptTracker -> A-R-Rony/PromptTracker")
+  const uriMatch = rawText.match(/\[URI\]\s*->\s*\[CorpusName\]:?\s*(?:\\n|[\r\n])+\s*([a-zA-Z]:[^\s"'>\r\n\\-]+|\/[^\s"'>\r\n\\-]+)/i)
+    || rawText.match(/(?:\[URI\]\s*->\s*\[CorpusName\]:?\s*[\r\n]+\s*)([a-zA-Z]:[^\r\n->"]+|\/[^\r\n->"]+?)(?:\s*->|\s*[\r\n]|$)/i);
+  if (uriMatch && uriMatch[1]) {
+    return cleanPathString(uriMatch[1]);
+  }
+
+  // 2. Check <RULE[...]> tag path (e.g. "<RULE[D:\PetProjects\PromptTracker\AGENTS.md]>")
+  const ruleMatch = rawText.match(/<RULE\[([a-zA-Z]:\\[^\]\r\n"'>]+|\/[^\]\r\n"'>]+)\]>/i)
+    || rawText.match(/<RULE\[([^\]"'>]+)\]>/i);
+  if (ruleMatch && ruleMatch[1]) {
+    const rawRule = ruleMatch[1].trim();
+    return cleanPathString(path.dirname(rawRule));
+  }
+
+  // 3. Check general active workspace text in <user_information>
+  const genericWsMatch = rawText.match(/active workspaces?[\s\S]*?([a-zA-Z]:\\[^\r\n-><>"'\s]+|\/[a-zA-Z0-9_.-]+(?:\/[a-zA-Z0-9_.-]+)+)/i);
+  if (genericWsMatch && genericWsMatch[1]) {
+    return cleanPathString(genericWsMatch[1]);
+  }
+
+  return '';
+}
+
 export class AntigravityScanner implements ToolScanner {
   readonly name = 'antigravity';
   private customBaseDir?: string;
@@ -66,16 +105,28 @@ export class AntigravityScanner implements ToolScanner {
 
   async scan(options?: ScanHints): Promise<NormalizedSession[]> {
     const sessions: NormalizedSession[] = [];
-    const baseDir = this.customBaseDir || path.join(os.homedir(), '.gemini', 'antigravity-ide', 'brain');
+    const possibleDirs = this.customBaseDir
+      ? [this.customBaseDir]
+      : [
+          path.join(os.homedir(), '.gemini', 'antigravity-ide', 'brain'),
+          path.join(os.homedir(), '.gemini', 'brain'),
+          path.join(os.homedir(), '.gemini', 'antigravity', 'brain'),
+          path.join(os.homedir(), '.antigravity', 'brain')
+        ].filter(d => fs.existsSync(d));
 
-    if (!fs.existsSync(baseDir)) return sessions;
+    if (possibleDirs.length === 0) return sessions;
 
-    try {
-      const convDirs = fs.readdirSync(baseDir);
+    const seenConvIds = new Set<string>();
 
-      for (const convId of convDirs) {
-        const transcriptPath = path.join(baseDir, convId, '.system_generated', 'logs', 'transcript.jsonl');
-        if (!fs.existsSync(transcriptPath)) continue;
+    for (const baseDir of possibleDirs) {
+      try {
+        const convDirs = fs.readdirSync(baseDir);
+
+        for (const convId of convDirs) {
+          if (seenConvIds.has(convId)) continue;
+          const transcriptPath = path.join(baseDir, convId, '.system_generated', 'logs', 'transcript.jsonl');
+          if (!fs.existsSync(transcriptPath)) continue;
+          seenConvIds.add(convId);
 
         try {
           const stats = fs.statSync(transcriptPath);
@@ -145,14 +196,28 @@ export class AntigravityScanner implements ToolScanner {
                     if (!lastTurn.toolCalls) lastTurn.toolCalls = [];
                     lastTurn.toolCalls.push({ name: tc.tool || tc.name || 'tool_call', args: tc.args });
                   }
-                  if (tc.args && tc.args.Cwd) {
-                    detectedProjectPath = tc.args.Cwd;
-                  } else if (tc.args && tc.args.TargetFile) {
-                    detectedProjectPath = path.dirname(tc.args.TargetFile);
+                  const args = tc.args || {};
+                  if (args.Cwd) {
+                    detectedProjectPath = args.Cwd;
+                  } else if (args.TargetFile) {
+                    detectedProjectPath = path.dirname(args.TargetFile);
+                  } else if (args.AbsolutePath) {
+                    detectedProjectPath = path.dirname(args.AbsolutePath);
+                  } else if (args.SearchPath) {
+                    detectedProjectPath = args.SearchPath;
+                  } else if (args.DirectoryPath) {
+                    detectedProjectPath = args.DirectoryPath;
                   }
                 }
               }
             } catch {}
+          }
+
+          if (detectedProjectPath) {
+            detectedProjectPath = cleanPathString(detectedProjectPath);
+          }
+          if (!detectedProjectPath) {
+            detectedProjectPath = extractAntigravityWorkspace(rawText);
           }
 
           if (turns.length > 0) {
@@ -187,7 +252,8 @@ export class AntigravityScanner implements ToolScanner {
     } catch (e) {
       console.error('AntigravityScanner error:', e);
     }
-
-    return sessions;
   }
+
+  return sessions;
+}
 }

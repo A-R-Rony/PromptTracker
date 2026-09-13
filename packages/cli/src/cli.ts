@@ -39,9 +39,10 @@ async function loadSessions(options: {
   date?: string;
   since?: string;
   until?: string;
+  rescan?: boolean;
 }): Promise<{ sessions: SessionMetadata[]; allSessions: SessionMetadata[]; scopeLabel: string; dateLabel: string }> {
   const cache = storageManager();
-  await syncCacheWithSources(cache);
+  await syncCacheWithSources(cache, { forceRescan: options.rescan });
   const allSessions = cache.listSessions();
 
   const scoped = filterSessionsByScope(allSessions, options);
@@ -66,7 +67,10 @@ async function loadSessions(options: {
   };
 }
 
-async function syncCacheWithSources(cache: SessionStorageManager): Promise<SyncReport> {
+async function syncCacheWithSources(
+  cache: SessionStorageManager,
+  options?: { forceRescan?: boolean }
+): Promise<SyncReport> {
   try {
     const migrationReport = await migrateLegacyJsonCache(cache);
     if (migrationReport.migrated > 0) {
@@ -81,7 +85,7 @@ async function syncCacheWithSources(cache: SessionStorageManager): Promise<SyncR
   }
 
   const registry = new ScannerRegistry();
-  const report = await syncSessions(cache, registry.listScanners());
+  const report = await syncSessions(cache, registry.listScanners(), options);
   for (const failure of report.failedSources) {
     console.error(chalk.yellow(`⚠ Could not read ${failure.name} source: ${failure.error}`));
   }
@@ -96,6 +100,7 @@ export async function runScan(options: {
   date?: string;
   since?: string;
   until?: string;
+  rescan?: boolean;
   noInteractive?: boolean;
 }) {
   const { sessions, allSessions, scopeLabel } = await loadSessions(options);
@@ -381,6 +386,25 @@ cacheCommand
   });
 
 
+cacheCommand
+  .command('rescan')
+  .description('Force a full rescan of all authoritative source sessions and update metadata')
+  .action(async () => {
+    try {
+      const cache = storageManager();
+      const registry = new ScannerRegistry();
+      const report = await syncSessions(cache, registry.listScanners(), { forceRescan: true });
+      console.log(chalk.green(
+        `✓ Rescan complete: ${report.ingested} ingested, ${report.updated} updated, ${report.removed} removed.`
+      ));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red(`Rescan failed: ${message}`));
+      process.exitCode = 1;
+    }
+  });
+
+
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
   const k = 1024;
@@ -394,6 +418,7 @@ function formatBytes(bytes: number): string {
 program
   .option('-a, --all', 'Scan all global projects and sessions')
   .option('-p, --project <name>', 'Filter by specific project name or path')
+  .option('-r, --rescan', 'Force a full rescan of all authoritative source sessions')
   .option('-d, --date <YYYY-MM-DD>', 'Filter by exact date (YYYY-MM-DD)')
   .option('--since <date_or_relative>', 'Filter sessions on or after date (e.g. 7d, 30d, 2026-08-01)')
   .option('--until <date>', 'Filter sessions up to date (YYYY-MM-DD)')

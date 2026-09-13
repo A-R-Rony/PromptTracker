@@ -42,6 +42,35 @@ describe('Scanners Engine (Dynamic Model & Session Extraction)', () => {
     assert.strictEqual(s.turns[0].toolCalls[0].name, 'write_to_file');
   });
 
+  it('AntigravityScanner detects project path from user_information workspace mapping, rule tags, and SearchPath', async () => {
+    const agDir = path.join(tmpDir, 'gemini', 'brain', 'conv-ws-header', '.system_generated', 'logs');
+    fs.mkdirSync(agDir, { recursive: true });
+
+    const sampleLog = [
+      JSON.stringify({
+        created_at: '2026-09-01T12:00:00Z',
+        type: 'USER_INPUT',
+        content: '<user_information>\n[URI] -> [CorpusName]:\nd:\\PetProjects\\PromptTracker -> A-R-Rony/PromptTracker\n</user_information>\n<USER_REQUEST>Show sessions</USER_REQUEST>'
+      }),
+      JSON.stringify({
+        created_at: '2026-09-01T12:00:05Z',
+        type: 'PLANNER_RESPONSE',
+        content: 'Searching codebase...',
+        tool_calls: [{ name: 'grep_search', args: { SearchPath: 'd:/PetProjects/PromptTracker', Query: 'AntigravityScanner' } }]
+      })
+    ].join('\n');
+
+    fs.writeFileSync(path.join(agDir, 'transcript.jsonl'), sampleLog, 'utf8');
+
+    const scanner = new AntigravityScanner(path.join(tmpDir, 'gemini', 'brain'));
+    const sessions = await scanner.scan();
+
+    const matched = sessions.find(s => s.id === 'antigravity-conv-ws-header');
+    assert.ok(matched);
+    assert.strictEqual(matched?.projectPath, 'd:/PetProjects/PromptTracker');
+    assert.strictEqual(matched?.toolSource, 'antigravity');
+  });
+
   it('ClaudeCodeScanner dynamically parses exact hardware token usage and model headers', async () => {
     const claudeDir = path.join(tmpDir, 'claude', 'projects', 'proj-1');
     fs.mkdirSync(claudeDir, { recursive: true });

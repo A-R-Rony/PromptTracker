@@ -45,7 +45,8 @@ interface CachedFileState {
 
 export async function syncSessions(
   storage: SessionStorageManager,
-  sources: SessionSource[]
+  sources: SessionSource[],
+  options?: { forceRescan?: boolean }
 ): Promise<SyncReport> {
   const report: SyncReport = {
     sourcesScanned: [],
@@ -86,6 +87,7 @@ export async function syncSessions(
       const cachedSessions = cachedByTool.get(source.name) ?? new Map<string, SourceSignals>();
       const cachedFiles = cachedFilesByTool.get(source.name) ?? new Map<string, CachedFileState[]>();
       const shouldSkipFile: ScanHints['shouldSkipFile'] = (filePath, fileStats) => {
+        if (options?.forceRescan) return false;
         const cached = cachedFiles.get(normalizedPathKey(filePath));
         if (!cached || cached.length === 0) return false;
         if (!cached.every(entry => signalsMatch(entry.signals, fileStats))) return false;
@@ -102,7 +104,7 @@ export async function syncSessions(
       const seenIds = new Set<string>(seenUnchanged);
       for (const record of discovered) {
         seenIds.add(record.id);
-        if (signalsMatch(cachedSessions.get(record.id), record.sourceSignals)) {
+        if (!options?.forceRescan && signalsMatch(cachedSessions.get(record.id), record.sourceSignals)) {
           report.skipped++;
           continue;
         }

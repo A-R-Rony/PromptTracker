@@ -30,20 +30,30 @@ export class KiroScanner implements ToolScanner {
 
   async scan(options?: ScanHints): Promise<NormalizedSession[]> {
     const sessions: NormalizedSession[] = [];
-    const kiroBase = this.customBaseDir || path.join(os.homedir(), '.kiro');
+    const possibleDirs = this.customBaseDir
+      ? [this.customBaseDir]
+      : [
+          path.join(os.homedir(), '.kiro'),
+          path.join(os.homedir(), '.config', 'kiro'),
+          process.env.APPDATA ? path.join(process.env.APPDATA, 'kiro') : ''
+        ].filter(Boolean).filter(d => fs.existsSync(d));
 
-    if (!fs.existsSync(kiroBase)) return sessions;
+    if (possibleDirs.length === 0) return sessions;
+
+    const seenFiles = new Set<string>();
 
     const scanDir = (dir: string) => {
       try {
         const files = fs.readdirSync(dir);
         for (const file of files) {
           const fullPath = path.join(dir, file);
+          if (seenFiles.has(fullPath)) continue;
           const stat = fs.statSync(fullPath);
 
           if (stat.isDirectory()) {
             scanDir(fullPath);
           } else if (file.endsWith('.json') && !file.startsWith('.')) {
+            seenFiles.add(fullPath);
             if (options?.shouldSkipFile?.(fullPath, { mtimeMs: stat.mtimeMs, sizeBytes: stat.size })) continue;
             this.parseKiroSessionFile(fullPath, sessions);
           }
@@ -51,7 +61,9 @@ export class KiroScanner implements ToolScanner {
       } catch {}
     };
 
-    scanDir(kiroBase);
+    for (const base of possibleDirs) {
+      scanDir(base);
+    }
     return sessions;
   }
 
@@ -138,7 +150,7 @@ export class KiroScanner implements ToolScanner {
           };
           const wsName = path.basename(path.dirname(filePath));
           const projectName = sess.name || sess.title || sess.projectName || wsName;
-          const detectedCwd = sess.projectPath || sess.cwd || sess.workspacePath || '';
+          const detectedCwd = sess.projectPath || sess.cwd || sess.workspacePath || sess.rootPath || sess.workspace || sess.project || sess.directory || '';
 
           sessions.push({
             id: 'kiro-' + (sess.id || path.basename(filePath, '.json')),

@@ -2,7 +2,13 @@ import * as path from 'path';
 import { NormalizedSession } from '@prompttracker/core';
 
 function normalizedPath(value: string): string {
-  return value.replace(/\\/g, '/');
+  if (!value) return '';
+  return value
+    .replace(/["'`<>]/g, '')
+    .replace(/\\/g, '/')
+    .replace(/\/+/g, '/')
+    .replace(/\/+$/, '')
+    .trim();
 }
 
 export function filterSessionsByScope<T extends Pick<NormalizedSession, 'projectPath' | 'projectName'>>(
