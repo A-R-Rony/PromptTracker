@@ -58,13 +58,18 @@ export const ToolScannersGrid: React.FC = () => {
     <section id="tool-scanners" style={{ padding: '4rem 0' }}>
       <div className="container">
         
-        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
           <div className="pill-badge pill-purple" style={{ marginBottom: '0.75rem' }}>
-            Pluggable Engine
+            Pluggable Scanner Engine
           </div>
-          <h2 style={{ fontSize: '2.2rem', marginBottom: '0.75rem' }}>One Tool for All Your AI Coding Assistants</h2>
-          <p style={{ color: 'var(--text-muted)', maxWidth: '640px', margin: '0 auto' }}>
-            PromptLens automatically discovers and normalizes logs from your installed developer tools without requiring manual imports or API keys.
+          <h2 style={{ fontSize: '2.1rem', marginBottom: '0.6rem' }}>One Tool for All Your AI Coding Assistants</h2>
+          <p style={{ color: 'var(--text-muted)', maxWidth: '680px', margin: '0 auto', fontSize: '0.95rem', lineHeight: 1.6 }}>
+            Automatically aggregate and navigate your full conversation histories, prompt turns, and tool calls across 
+            <strong style={{ color: '#fff' }}> Google Antigravity</strong>, 
+            <strong style={{ color: '#fff' }}> Claude Code</strong>, 
+            <strong style={{ color: '#fff' }}> OpenAI Codex</strong>, 
+            <strong style={{ color: '#fff' }}> Kiro IDE</strong>, and 
+            <strong style={{ color: '#fff' }}> OpenCode</strong> without requiring manual imports or API keys.
           </p>
         </div>
 

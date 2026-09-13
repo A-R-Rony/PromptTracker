@@ -2,6 +2,7 @@ import React from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { TerminalSimulator } from './components/TerminalSimulator';
+import { CommandReference } from './components/CommandReference';
 import { ToolScannersGrid } from './components/ToolScannersGrid';
 import { CostCalculator } from './components/CostCalculator';
 import { PrivacyArchitecture } from './components/PrivacyArchitecture';
@@ -16,6 +17,7 @@ export const App: React.FC = () => {
       <main style={{ flex: 1 }}>
         <Hero />
         <TerminalSimulator />
+        <CommandReference />
         <ToolScannersGrid />
         <CostCalculator />
         <PrivacyArchitecture />

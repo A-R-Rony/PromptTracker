@@ -11,52 +11,67 @@ export const Hero: React.FC = () => {
   };
 
   return (
-    <section id="hero" style={{ padding: '5rem 0 3.5rem', textAlign: 'center', position: 'relative' }}>
-      <div className="container" style={{ maxWidth: '900px' }}>
+    <section id="hero" style={{ padding: '3.5rem 0 2.5rem', textAlign: 'center', position: 'relative' }}>
+      <div className="container" style={{ maxWidth: '820px' }}>
         
-        {/* Release Pill */}
-        <div style={{ display: 'inline-flex', marginBottom: '1.5rem' }}>
-          <div className="pill-badge pill-cyan" style={{ gap: '0.6rem', padding: '0.45rem 1.1rem', fontSize: '0.85rem' }}>
-            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#00f2fe', boxShadow: '0 0 10px #00f2fe' }}></span>
-            <span>Live on npm • Universal AI Coding Telemetry</span>
+        {/* Animated Live on npm Pill */}
+        <a
+          href="https://www.npmjs.com/package/@ar_rony1/prompt-lens"
+          target="_blank"
+          rel="noreferrer"
+          style={{ textDecoration: 'none', display: 'inline-flex', marginBottom: '1.25rem' }}
+        >
+          <div className="pill-badge live-npm-badge" style={{ gap: '0.6rem', padding: '0.35rem 1rem', fontSize: '0.8rem', color: '#f1f5f9', cursor: 'pointer' }}>
+            <span className="live-beacon"></span>
+            <span style={{ fontWeight: 600 }}>
+              <span style={{ color: '#00f2fe' }}>Live on npm</span> • Universal AI Coding Assistant Tracker ↗
+            </span>
           </div>
-        </div>
+        </a>
 
         {/* Main Headline */}
-        <h1 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', lineHeight: 1.15, marginBottom: '1.5rem' }}>
-          Stop Guessing Your <br />
-          <span className="gradient-text">AI Token Burn & Model Costs</span>
+        <h1 style={{
+          fontSize: 'clamp(2rem, 3.5vw, 2.9rem)',
+          lineHeight: 1.22,
+          fontWeight: 800,
+          marginBottom: '1rem',
+          letterSpacing: '-0.035em'
+        }}>
+          All Your AI Coding Prompts <br />
+          <span className="gradient-text">Unified Across Every Assistant</span>
         </h1>
 
-        {/* Subtitle */}
-        <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', maxWidth: '720px', margin: '0 auto 2.5rem', lineHeight: 1.6 }}>
-          Automatically aggregate, analyze, and navigate prompt histories, exact tokens, and spend across 
-          <strong style={{ color: '#fff' }}> Google Antigravity</strong>, 
-          <strong style={{ color: '#fff' }}> Claude Code</strong>, 
-          <strong style={{ color: '#fff' }}> Codex</strong>, 
-          <strong style={{ color: '#fff' }}> Kiro</strong>, and 
-          <strong style={{ color: '#fff' }}> OpenCode</strong> directly in your terminal.
+        {/* Crisp, clean Hero Subtitle */}
+        <p style={{
+          fontSize: '1.05rem',
+          color: 'var(--text-muted)',
+          maxWidth: '600px',
+          margin: '0 auto 2rem',
+          lineHeight: 1.5,
+          fontWeight: 400
+        }}>
+          A developer-first terminal interface to navigate, inspect, and analyze all your local AI coding sessions with zero cloud telemetry.
         </p>
 
         {/* 1-Click Copy Box */}
-        <div style={{ maxWidth: '540px', margin: '0 auto 2rem' }}>
-          <div className="code-box" style={{ padding: '0.9rem 1.25rem' }}>
+        <div style={{ maxWidth: '480px', margin: '0 auto 1.5rem' }}>
+          <div className="code-box" style={{ padding: '0.75rem 1.1rem' }}>
             <span style={{ color: 'var(--text-dim)' }}>$</span>
-            <code style={{ fontSize: '1.05rem', fontWeight: 600 }}>npx @ar_rony1/prompt-lens</code>
+            <code style={{ fontSize: '0.95rem', fontWeight: 600 }}>npx @ar_rony1/prompt-lens</code>
             <button
               className="copy-btn"
               onClick={copyCommand}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.55rem 1rem' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.45rem 0.85rem' }}
             >
               {copied ? (
                 <>
                   <CompanyLogos.CheckIcon />
-                  <span>Copied to Clipboard!</span>
+                  <span>Copied!</span>
                 </>
               ) : (
                 <>
                   <CompanyLogos.CopyIcon />
-                  <span>Copy Command</span>
+                  <span>Copy</span>
                 </>
               )}
             </button>
@@ -64,18 +79,18 @@ export const Hero: React.FC = () => {
         </div>
 
         {/* Feature Highlights Row */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1.75rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ color: 'var(--accent-emerald)' }}>✓</span> 100% Offline & Private
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1.25rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span style={{ color: 'var(--accent-emerald)' }}>✓</span> 100% Local Prompts & Data
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ color: 'var(--accent-emerald)' }}>✓</span> Zero Configuration
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span style={{ color: 'var(--accent-cyan)' }}>✓</span> 24h Live Model Pricing Sync
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ color: 'var(--accent-emerald)' }}>✓</span> Multi-Tool Scanner
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span style={{ color: 'var(--accent-emerald)' }}>✓</span> Exact Local Tokens & Cost
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ color: 'var(--accent-emerald)' }}>✓</span> Smart Monorepo Scoping
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span style={{ color: 'var(--accent-emerald)' }}>✓</span> Smart Project Scoping
           </div>
         </div>
       </div>

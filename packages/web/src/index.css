@@ -18,6 +18,7 @@
   --text-dim: #64748b;
 
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
@@ -46,9 +47,10 @@ body {
 
 /* Typography & General Utilities */
 h1, h2, h3, h4, h5 {
+  font-family: var(--font-heading);
   color: #ffffff;
   font-weight: 700;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
 }
 
 .mono {
@@ -247,6 +249,54 @@ h1, h2, h3, h4, h5 {
 @keyframes pulseGlow {
   0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
+}
+
+@keyframes pingPulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(0, 242, 254, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(0, 242, 254, 0);
+  }
+}
+
+@keyframes badgeShimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.live-beacon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: #00f2fe;
+  animation: pingPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.live-npm-badge {
+  background: linear-gradient(90deg, rgba(0,242,254,0.12), rgba(0,245,160,0.12), rgba(0,242,254,0.12));
+  background-size: 200% 200%;
+  animation: badgeShimmer 4s ease infinite;
+  border: 1px solid rgba(0, 242, 254, 0.35);
+  box-shadow: 0 0 20px rgba(0, 242, 254, 0.15);
+  transition: all 0.2s ease;
+}
+
+.live-npm-badge:hover {
+  border-color: #00f2fe;
+  box-shadow: 0 0 25px rgba(0, 242, 254, 0.35);
+  transform: translateY(-1px);
 }
 
 .animate-pulse-glow {

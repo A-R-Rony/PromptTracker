@@ -38,11 +38,11 @@ export const CostCalculator: React.FC = () => {
         
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
           <div className="pill-badge pill-cyan" style={{ marginBottom: '0.75rem' }}>
-            Interactive Token & Cost Estimator
+            24-Hour Remote Sync + Local Data Tracking
           </div>
-          <h2 style={{ fontSize: '2.2rem', marginBottom: '0.5rem' }}>Calculate Your Monthly AI Spend</h2>
-          <p style={{ color: 'var(--text-muted)' }}>
-            PromptLens syncs with OpenRouter's live registry every 24 hours to track exact hardware burn.
+          <h2 style={{ fontSize: '2.2rem', marginBottom: '0.5rem' }}>Dynamic Token & Cost Calculation</h2>
+          <p style={{ color: 'var(--text-muted)', maxWidth: '680px', margin: '0 auto' }}>
+            PromptLens calculates tokens and costs directly from your <strong>local session logs</strong> combined with automatic <strong>24-hour background rate sync</strong> from live model registries.
           </p>
         </div>
 
@@ -80,7 +80,7 @@ export const CostCalculator: React.FC = () => {
               {/* Slider 1 */}
               <div style={{ marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem', fontSize: '0.88rem' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Daily Prompts / Requests:</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Daily Prompts Across Harnesses:</span>
                   <strong style={{ color: '#00f2fe' }}>{promptsPerDay} prompts/day</strong>
                 </div>
                 <input
