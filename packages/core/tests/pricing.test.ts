@@ -1,8 +1,16 @@
-import { describe, it } from 'node:test';
+import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert';
-import { estimateCost, approximateTokens } from '../src/pricing';
+import * as path from 'path';
+import * as os from 'os';
+import { estimateCost, approximateTokens, PricingEngine } from '../src/pricing';
 
 describe('Pricing Engine', () => {
+  beforeEach(() => {
+    // Isolate unit tests from user's live home directory ~/.prompttracker/pricing.json
+    const nonExistentTestCache = path.join(os.tmpdir(), `test-pricing-${Date.now()}.json`);
+    PricingEngine.resetInstance(new PricingEngine(nonExistentTestCache));
+  });
+
   it('approximates token count accurately from string length (1 token per 4 chars)', () => {
     assert.strictEqual(approximateTokens(''), 0);
     assert.strictEqual(approximateTokens('abcd'), 1);

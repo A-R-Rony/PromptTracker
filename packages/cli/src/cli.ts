@@ -219,16 +219,16 @@ program
     console.log(
       chalk.bold('Total Prompts: ') +
         chalk.yellow(totalPrompts.toLocaleString()) +
-        chalk.bold('  |  Total Tokens: ') +
+        chalk.bold('  |  Est. Tokens: ') +
         chalk.cyan(totalTokens.toLocaleString()) +
-        chalk.bold('  |  Total Cost: ') +
+        chalk.bold('  |  Est. Cost: ') +
         chalk.green('$' + totalCost.toFixed(4)) +
         '\n'
     );
 
     // Tool breakdown table
     const toolTable = new Table({
-      head: [chalk.magenta('Tool Source'), chalk.magenta('Sessions'), chalk.magenta('Tokens'), chalk.magenta('Est. Cost')],
+      head: [chalk.magenta('Tool Source'), chalk.magenta('Sessions'), chalk.magenta('Est. Tokens'), chalk.magenta('Est. Cost')],
     });
     for (const [tool, st] of Object.entries(byTool)) {
       toolTable.push([tool, st.sessions, st.tokens.toLocaleString(), '$' + st.cost.toFixed(4)]);
@@ -238,7 +238,7 @@ program
 
     // Model breakdown table
     const modelTable = new Table({
-      head: [chalk.blue('Model'), chalk.blue('Sessions'), chalk.blue('Tokens')],
+      head: [chalk.blue('Model'), chalk.blue('Sessions'), chalk.blue('Est. Tokens')],
     });
     for (const [model, st] of Object.entries(byModel)) {
       modelTable.push([model, st.count, st.tokens.toLocaleString()]);

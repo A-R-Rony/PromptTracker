@@ -55,6 +55,14 @@ prompt-lens
 
 # Launch interactive TUI for all projects machine-wide
 prompt-lens -a
+
+# Force a full rescan of all local transcripts and refresh metadata
+prompt-lens -r
+# (or prompt-lens --rescan)
+
+# Filter by date or specific project
+prompt-lens -p my-project
+prompt-lens --since 7d
 ```
 
 #### TUI Hotkeys:
@@ -78,6 +86,10 @@ prompt-lens stats
 
 # Stats machine-wide across all projects
 prompt-lens stats -a
+
+# Stats for last 7 days or exact date
+prompt-lens stats --since 7d
+prompt-lens stats -d 2026-09-13
 ```
 
 ---
@@ -90,6 +102,9 @@ prompt-lens list
 
 # Raw JSON output
 prompt-lens list --json | jq .
+
+# Filtered list
+prompt-lens list -a --since 30d
 ```
 
 ---
@@ -113,6 +128,9 @@ Inspect and manage the local disposable SQLite cache:
 # View Cached Content size, session count, and configured limits
 prompt-lens cache status
 prompt-lens cache status --json
+
+# Force a full rescan of all authoritative source transcripts
+prompt-lens cache rescan
 
 # Safely clear cached full Turn content while preserving Session metadata
 prompt-lens cache clear

@@ -39,12 +39,16 @@ export class PricingEngine {
   private syncIntervalMs: number = 24 * 60 * 60 * 1000; // 24 Hours
   private openRouterApiUrl: string = 'https://openrouter.ai/api/v1/models';
 
-  private constructor() {
-    const configDir = path.join(os.homedir(), '.prompttracker');
-    if (!fs.existsSync(configDir)) {
-      try { fs.mkdirSync(configDir, { recursive: true }); } catch {}
+  public constructor(customCacheFilePath?: string) {
+    if (customCacheFilePath) {
+      this.cacheFilePath = customCacheFilePath;
+    } else {
+      const configDir = path.join(os.homedir(), '.prompttracker');
+      if (!fs.existsSync(configDir)) {
+        try { fs.mkdirSync(configDir, { recursive: true }); } catch {}
+      }
+      this.cacheFilePath = path.join(configDir, 'pricing.json');
     }
-    this.cacheFilePath = path.join(configDir, 'pricing.json');
     this.pricingTable = { ...EMBEDDED_PRICING_TABLE };
 
     this.loadCachedPricing();
@@ -55,6 +59,10 @@ export class PricingEngine {
       PricingEngine.instance = new PricingEngine();
     }
     return PricingEngine.instance;
+  }
+
+  public static resetInstance(instance?: PricingEngine): void {
+    PricingEngine.instance = instance as any;
   }
 
   private loadCachedPricing(): void {
