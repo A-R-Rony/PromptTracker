@@ -201,4 +201,4 @@ npm test
 
 ## 📜 License
 
-MIT © [Abdur Rony](https://github.com/A-R-Rony)
+MIT © [A R Rony](https://github.com/A-R-Rony)

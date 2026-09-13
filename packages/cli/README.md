@@ -4,7 +4,7 @@
 > Automatically aggregate, analyze, and navigate prompt history, token burn, model costs, and conversation transcripts across Google Antigravity, Anthropic Claude Code, OpenAI Codex, Kiro IDE, and OpenCode in a modern terminal UI.
 
 [![CI](https://github.com/A-R-Rony/PromptTracker/actions/workflows/ci.yml/badge.svg)](https://github.com/A-R-Rony/PromptTracker/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/prompt-lens.svg)](https://www.npmjs.com/package/prompt-lens)
+[![npm version](https://img.shields.io/npm/v/@ar_rony1/prompt-lens.svg)](https://www.npmjs.com/package/@ar_rony1/prompt-lens)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ---
@@ -201,4 +201,4 @@ npm test
 
 ## 📜 License
 
-MIT © [Abdur Rony](https://github.com/A-R-Rony)
+MIT © [A R Rony](https://github.com/A-R-Rony)
