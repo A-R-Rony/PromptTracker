@@ -9,7 +9,7 @@
     "test": "node --test dist/tests/tests/scanners.test.js"
   },
   "dependencies": {
-    "@prompttracker/core": "*"
+    "@prompttracker/core": "^0.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.9",
