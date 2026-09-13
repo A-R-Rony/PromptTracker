@@ -24,28 +24,17 @@ jobs:
           node-version: 20.x
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
-
       - name: Install Dependencies
-        run: pnpm install --frozen-lockfile=false
+        run: npm ci || npm install
 
       - name: Build All Packages
-        run: |
-          pnpm --filter "@prompttracker/core" build
-          pnpm --filter "@prompttracker/scanners" build
-          pnpm --filter "@prompttracker/cli" build
-          pnpm --filter "@prompttracker/server" build
-          pnpm --filter "@prompttracker/web" build
+        run: npm run build:all
 
       - name: Run Tests
-        run: |
-          node --test packages/core/dist/**/*.test.js packages/scanners/dist/**/*.test.js packages/cli/dist/**/*.test.js packages/server/dist/**/*.test.js packages/web/dist/**/*.test.js
+        run: npm test
 
       - name: Publish CLI to npm with Provenance
-        run: pnpm --filter "prompttracker" publish --access public --no-git-checks
+        run: npm publish --workspace=packages/cli --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
