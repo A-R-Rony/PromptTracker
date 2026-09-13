@@ -48,6 +48,12 @@ prototype/
 lessons/
 PROJECT_SUMMARY.md
 
+# Agent Context & Skills
+.agents/
+AGENTS.md
+CONTEXT.md
+skills-lock.json
+
 # OS & Editor Metadata
 .DS_Store
 Thumbs.db
