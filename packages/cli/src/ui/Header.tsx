@@ -39,7 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
     >
       {/* Scope and Presets Row */}
       <Box justifyContent="space-between" width="100%">
-        <Box>
+        <Box flexShrink={1} flexGrow={1} marginRight={2}>
           <Text bold color="cyanBright">
             {'🔍 PROMPT-LENS'}
           </Text>
@@ -47,14 +47,14 @@ export const Header: React.FC<HeaderProps> = ({
           <Text color="white" bold>
             {'Scope: '}
           </Text>
-          <Text color={isAllProjects ? 'yellowBright' : 'greenBright'} bold>
-            {projectName}
+          <Text color={isAllProjects ? 'yellowBright' : 'greenBright'} bold wrap="truncate">
+            {projectName.length > 25 ? projectName.slice(0, 22) + '...' : projectName}
           </Text>
           <Text color="gray">{' [a: toggle scope]'}</Text>
         </Box>
 
         {/* Date Filter Pills */}
-        <Box>
+        <Box flexShrink={0}>
           <Text color="gray">{'Filters: '}</Text>
           {presets.map((p) => {
             const isActive = datePreset === p.value;

@@ -20,7 +20,7 @@ export function getToolBadge(tool: string): { label: string; color: string } {
 export const SessionList: React.FC<SessionListProps> = ({
   sessions,
   selectedIndex,
-  maxVisible = 15,
+  maxVisible = 10,
 }) => {
   if (sessions.length === 0) {
     return (
@@ -84,7 +84,7 @@ export const SessionList: React.FC<SessionListProps> = ({
         const pathPart = session.projectPath ? ` [${session.projectPath.split(/[\\/]/).pop()}]` : '';
         const fullTitle = `${promptSummary}${pathPart}`;
         const truncatedSummary =
-          fullTitle.length > 55 ? fullTitle.slice(0, 52) + '...' : fullTitle.padEnd(55);
+          fullTitle.length > 50 ? fullTitle.slice(0, 47) + '...' : fullTitle;
 
         const isEst = session.totalTokens.isEstimated;
         const tokenPrefix = isEst ? 'Est. ' : '';
@@ -97,30 +97,30 @@ export const SessionList: React.FC<SessionListProps> = ({
             justifyContent="space-between"
             width="100%"
           >
-            <Box>
-              <Text color={isSelected ? 'cyanBright' : 'gray'} bold={isSelected}>
+            <Box flexShrink={1} flexGrow={1} marginRight={1}>
+              <Text color={isSelected ? 'cyanBright' : 'gray'} bold={isSelected} wrap="truncate">
                 {isSelected ? '▶ ' : '  '}
               </Text>
-              <Text color={isSelected ? 'white' : 'gray'} bold={isSelected}>
+              <Text color={isSelected ? 'white' : 'gray'} bold={isSelected} wrap="truncate">
                 {datePart}{' '}
               </Text>
               <Text color="gray">{'│ '}</Text>
-              <Text color={badge.color as any} bold>
+              <Text color={badge.color as any} bold wrap="truncate">
                 {`[${badge.label}] `}
               </Text>
               <Text color="gray">{'│ '}</Text>
-              <Text color={isSelected ? 'yellowBright' : 'white'} bold={isSelected}>
-                {truncatedSummary}{' '}
+              <Text color={isSelected ? 'yellowBright' : 'white'} bold={isSelected} wrap="truncate">
+                {truncatedSummary}
               </Text>
             </Box>
-            <Box>
+            <Box flexShrink={0}>
               <Text color="gray">{'│ '}</Text>
               <Text color={isSelected ? 'cyanBright' : 'gray'} bold={isSelected}>
-                {tokenText.padStart(12)}{' '}
+                {tokenText.padStart(14)}{' '}
               </Text>
               <Text color="gray">{'│ '}</Text>
               <Text color={isSelected ? 'greenBright' : 'gray'} bold={isSelected}>
-                {costText.padStart(8)}
+                {costText.padStart(9)}
               </Text>
             </Box>
           </Box>

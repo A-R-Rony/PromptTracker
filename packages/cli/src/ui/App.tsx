@@ -211,7 +211,7 @@ export const App: React.FC<AppProps> = ({
         <SessionList
           sessions={filteredSessions}
           selectedIndex={selectedIndex}
-          maxVisible={15}
+          maxVisible={10}
         />
       ) : selectedSession ? (
         <SessionDetail
