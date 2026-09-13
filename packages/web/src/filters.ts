@@ -1,4 +1,4 @@
-import type { NormalizedSession } from '../../core/dist/types';
+import type { NormalizedSession } from './types';
 
 export type DatePreset = 'today' | 'yesterday' | '7d' | '30d' | 'all';
 

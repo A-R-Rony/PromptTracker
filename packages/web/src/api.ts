@@ -1,4 +1,4 @@
-import type { NormalizedSession, DailySummary, MetricAggregate } from '../../core/dist/types';
+import type { NormalizedSession, DailySummary, MetricAggregate } from './types';
 
 export interface TelemetrySummary {
   totalTokens: number;
