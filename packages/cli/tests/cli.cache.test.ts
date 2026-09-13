@@ -7,7 +7,7 @@ import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { CacheStatus, SessionMetadata } from '@prompttracker/core';
 
-const cliPath = fileURLToPath(new URL('../src/cli.js', import.meta.url));
+const cliPath = fileURLToPath(new URL('../../cli.js', import.meta.url));
 
 const temporaryHomes: string[] = [];
 afterEach(() => {

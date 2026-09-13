@@ -12,7 +12,7 @@
   },
   "scripts": {
     "build": "tsc && tsc -p tsconfig.test.json",
-    "test": "node dist/tests/tests/cli.test.js && node dist/tests/tests/cli.sync.test.js && node dist/tests/tests/cli.cache.test.js && node dist/tests/tests/ui/ui.test.js"
+    "test": "node dist/tests/tests/cli.test.js && node dist/tests/tests/cli.sync.test.js && node dist/tests/tests/cli.cache.test.js && node dist/tests/tests/cli.acceptance.test.js && node dist/tests/tests/ui/ui.test.js"
   },
   "dependencies": {
     "@prompttracker/core": "*",

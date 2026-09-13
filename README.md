@@ -124,8 +124,12 @@ prompt-lens cache migrate
 
 ---
 
-## 🔒 Local Storage & Privacy
-Cached prompts and responses are stored strictly locally in plaintext inside Prompt Lens's SQLite database (`~/.prompttracker/data.db`) and are **never transmitted** over the network by cache management or normal CLI operations. The database and containing directory receive restrictive permissions (`0700`/`0600`) on supported platforms.
+## 🔒 Local Storage, Privacy & Retention Policy
+
+- **Disposable Derived Cache**: Prompt Lens uses an embedded SQLite database (`~/.prompttracker/data.db`) purely as a disposable derived cache and index. The original log files produced by Claude Code, OpenAI Codex, OpenCode, Antigravity IDE, and Kiro remain authoritative.
+- **Source Reconciliation**: When an authoritative source session is deleted, Prompt Lens automatically removes its metadata and Cached Content on the next reconciliation scan.
+- **Permanent Archival**: If you need permanent archival before deleting authoritative source session logs from your machine, create a standalone **Exported Transcript** (`prompt-lens export <sessionId> --format md`).
+- **Local Plaintext Storage**: Cached prompts and responses are stored strictly locally in plaintext inside Prompt Lens's SQLite database and are **never transmitted** over the network by cache management or normal CLI operations. The database and containing directory receive restrictive permissions (`0700`/`0600`) on supported platforms.
 
 You can configure retention policies or disable full-content caching entirely by creating `~/.prompttracker/config.json`:
 ```json

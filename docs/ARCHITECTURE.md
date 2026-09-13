@@ -1,92 +1,82 @@
-﻿# Production Architecture & Design Blueprint: PromptBurn / Universal AI Tracker
+# Production Architecture & Design Blueprint: Prompt Lens (`prompt-lens`)
 
-A local-first telemetry and intelligence hub for developers using multiple AI coding assistants (**Antigravity IDE, OpenAI Codex / ChatGPT, Kiro IDE, OpenCode, Claude Code, Cursor, Cline/Roo Code, Aider**).
+A local-first developer telemetry and prompt intelligence engine for developers using multiple AI coding assistants (**Antigravity IDE, Anthropic Claude Code, OpenAI Codex, Kiro IDE, OpenCode**).
 
 ---
 
 ## 1. System Vision & Non-Negotiables
 
-1. **100% Privacy & Local-First**: No developer prompts or sensitive code snippets ever leave the developer machine.
-2. **Zero-Config Passive Scanning**: Automatic ingestion from standard OS file paths (JSONL, SQLite, JSON, Markdown).
-3. **Deep Navigation**: One-click opening from dashboard directly into the source IDE or conversation file.
-4. **Rich Aesthetics**: Glassmorphic, dark-mode-first dashboard with date filters and multi-model cost analytics.
+1. **100% Privacy & Local-First**: No developer prompts or sensitive code snippets ever leave the developer machine. All cached content is stored locally in plaintext without cloud telemetry or external logging.
+2. **Zero-Config Passive Scanning**: Automatic ingestion from standard OS file paths (`.jsonl`, SQLite, `.json`).
+3. **Deep Navigation**: Instant date, project, and scope filtering with one-click Exported Transcript generation for IDE inspection.
+4. **Disposable Derived Cache**: Local SQLite database acts strictly as a disposable derived cache and index. Authoritative source sessions remain primary, and deleting a source session reconciles it out of the cache.
+5. **Two-Tier Session Loading**: Keeps lightweight Session metadata available for fast navigation while loading complete Turn bodies only on-demand (Cached Content with LRU and age retention limits).
 
 ---
 
-## 2. Monorepo Structure (pnpm + 	urborepo)
+## 2. Monorepo Package Structure
 
-`
-D:\PetProjects\PrompotTracker\
-├── apps\
-│   ├── web\                      # Vite + React + Tailwind + Radix UI + Lucide
-│   │   ├── src\
-│   │   │   ├── components\       # KPI cards, charts, prompt drawers, filters
-│   │   │   ├── hooks\            # useSessions, useSummary, useFilters
-│   │   │   └── App.tsx
+```
+PromptTracker/
+├── packages/
+│   ├── core/           # Normalized schemas, pricing catalog, SQLite storage & cache retention, Markdown exporter
+│   │   ├── src/
+│   │   │   ├── config.ts         # User cache configuration (~/.prompttracker/config.json)
+│   │   │   ├── exporter.ts       # Markdown & JSON Exported Transcript generation
+│   │   │   ├── legacyMigration.ts # Safe transactional legacy JSON cache migration
+│   │   │   ├── pricing.ts        # Embedded offline fallback + 24h background sync
+│   │   │   ├── storage.ts        # Disposable SQLite database & LRU/age retention
+│   │   │   └── sync.ts           # Incremental multi-source reconciliation
 │   │   └── package.json
 │   │
-│   └── cli\                      # Standalone CLI binary & embedded server
-│       ├── src\
-│       │   ├── commands\         # scan, ui, export, config, watch
-│       │   └── index.ts
-│       └── package.json
-│
-├── packages\
-│   ├── core\                     # Core scanner engine, parser registry & normalizer
-│   │   ├── src\
-│   │   │   ├── adapters\         # Antigravity, Codex, Kiro, OpenCode, ClaudeCode, Cursor, Cline, Aider
-│   │   │   ├── models\           # Pricing catalog & token counters
-│   │   │   ├── store\            # SQLite incremental cache (better-sqlite3)
-│   │   │   └── watcher\          # File system watcher (chokidar) for real-time tracking
+│   ├── scanners/       # Pluggable Tool Scanners
+│   │   ├── src/
+│   │   │   ├── AntigravityScanner.ts
+│   │   │   ├── ClaudeCodeScanner.ts
+│   │   │   ├── CodexScanner.ts
+│   │   │   ├── KiroScanner.ts
+│   │   │   └── OpenCodeScanner.ts
 │   │   └── package.json
 │   │
-│   └── types\                    # Shared TypeScript interfaces & contracts
-│       ├── src\
-│       │   └── index.ts
+│   └── cli/            # Standalone prompt-lens CLI & Ink Terminal UI
+│       ├── src/
+│       │   ├── cli.ts            # CLI commands (scan, stats, list, export, cache)
+│       │   ├── dateFilter.ts     # Date preset filtering (Today, 7D, 30D, custom)
+│       │   ├── scope.ts          # Project scoping & global toggle
+│       │   ├── sessionLoader.ts  # Lazy Turn loading & source rehydration
+│       │   └── ui/               # Ink React Terminal UI components
 │       └── package.json
 │
-├── prototype\                    # Completed Proof of Concept
-├── docs\                         # Architecture & RFC specifications
-├── pnpm-workspace.yaml
-├── turbo.json
+├── docs/               # Architecture, Specification & ADRs
+│   ├── adr/            # ADR 0001 - ADR 0005
+│   ├── SPEC.md
+│   └── ARCHITECTURE.md
+├── CONTEXT.md          # Canonical domain glossary
 └── package.json
-`
+```
 
 ---
 
-## 3. Core Engine Adapter Architecture
+## 3. Core Engine Architecture
 
-`mermaid
+```mermaid
 graph TD
     A1[Antigravity Logs] --> R[Scanner Registry]
-    A2[OpenAI Codex & ChatGPT] --> R
-    A3[Kiro IDE Sessions] --> R
-    A4[OpenCode Sessions] --> R
-    A5[Claude Code Projects] --> R
-    A6[Cursor & VS Code Storage] --> R
-    A7[Cline and Roo Storage] --> R
-    W[File Watcher] --> R
-    R --> N[Session Normalizer]
-    N --> SQL[(Local SQLite Cache)]
-    SQL --> CLI[CLI Scanner]
-    SQL --> API[Embedded REST API]
-    API --> Web[Web Dashboard]
-`
+    A2[Anthropic Claude Code] --> R
+    A3[OpenAI Codex CLI] --> R
+    A4[Kiro IDE Sessions] --> R
+    A5[OpenCode DB & Sessions] --> R
+    R --> S[Incremental Sync Engine]
+    S --> DB[(Disposable SQLite Cache & Index)]
+    DB --> CLI[Prompt Lens CLI / TUI]
+    DB --> EXP[Exported Transcripts]
+```
 
 ---
 
-## 4. Phased Implementation Roadmap
+## 4. Key Architectural Guarantees
 
-### Phase 1: Monorepo Foundation & Core Engine (packages/core, packages/types)
-- Setup pnpm workspace and TypeScript configuration.
-- Implement incremental SQLite caching (etter-sqlite3) tracking file hashes to ensure instantaneous queries.
-- Build hardened adapters for **Antigravity IDE**, **OpenAI Codex**, **Kiro IDE**, **OpenCode**, **Claude Code**, and **Cursor**.
-- Token and pricing catalog supporting latest 2026 models (Gemini 2.5/3.7, Claude 3.7 Sonnet, GPT-4o, o3-mini, DeepSeek-V3/R1).
-
-### Phase 2: Production CLI & Background Daemon (pps/cli)
-- Terminal commands: promptburn scan, promptburn ui, promptburn export --format csv|json.
-- Live file watcher mode (promptburn watch) to stream incoming prompts in real-time.
-
-### Phase 3: Modern Desktop Web Experience (pps/web)
-- React + Vite + Tailwind glassmorphic UI.
-- Interactive timeline, date filtering, cost projection meters, and one-click IDE deep-linking.
+1. **Incremental Sync & Reconciliation**: Scanners check file modification time and size signals before parsing. When an authoritative source session is removed, reconciliation purges both its metadata and Cached Content.
+2. **Bounded Cached Content**: Full Turn bodies are retained in SQLite with configurable retention limits (default 30 days and 250 MB). Least-recently-accessed Turn bodies are evicted when limits are exceeded while metadata remains available for navigation.
+3. **No Process-Memory Claims**: Cached Content refers exclusively to Turn bodies retained in SQLite, not total Node.js RAM usage.
+4. **Full-Fidelity Exports**: Exporting a session creates a standalone Markdown Exported Transcript with un-truncated prompts and responses for long-term archival before authoritative sources are pruned.

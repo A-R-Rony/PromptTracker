@@ -9,9 +9,10 @@ AI coding assistants produce large session logs containing detailed explanations
 
 ## Decision
 1. **Full Un-Truncated Markdown Transcripts**: When generating an Exported Transcript (`.md`), include the complete developer prompt, entire model response, and formatted tool calls, accompanied by a metadata link to the raw source file on disk.
-2. **Two-Tier Loading (Metadata-First)**: Scanners index session metadata (date, project, token counts, cost, turn count, source file path) at startup with minimal RAM overhead (~1KB/session). Complete turn-by-turn text and model responses are loaded lazily on-demand when a developer selects a Session in the CLI or Web UI.
+2. **Two-Tier Loading (Metadata-First)**: Scanners index session metadata (date, project, token counts, cost, turn count, source file path) at startup with minimal overhead. Complete turn-by-turn text and model responses are loaded lazily on-demand when a developer selects a Session in the CLI or Web UI.
 3. **Terminal Preview Boundaries**: The Terminal UI (TUI) displays a concise preview (200-300 characters) to avoid scrollback flooding, while the full content is accessible via the IDE Markdown export.
 
 ## Consequences
-- **Memory Efficiency**: Metadata-first loading reduces the amount of full Turn content retained during ordinary navigation; it is not a strict process-memory guarantee.
+- **Storage & Ingestion Efficiency**: Metadata-first loading keeps Session navigation responsive and allows Cached Content to be managed with explicit retention bounds (see ADR 0005); it is not a strict process-memory guarantee.
 - **Developer Experience**: Developers get clean, syntax-highlighted, full-fidelity conversation transcripts inside their preferred IDE without losing access to original raw files.
+

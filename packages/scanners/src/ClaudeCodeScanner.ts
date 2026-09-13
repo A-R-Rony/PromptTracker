@@ -126,7 +126,8 @@ export class ClaudeCodeScanner implements ToolScanner {
       }
 
       if (turns.length > 0) {
-        const dateStr = stats.mtime.toISOString().split('T')[0];
+        const sessionTimestamp = turns[0]?.timestamp || stats.mtime.toISOString();
+        const dateStr = sessionTimestamp.split('T')[0];
         const isEstimated = turns.some(t => t.tokens.isEstimated);
         const totalTokens = {
           input: inTokTotal,
@@ -142,7 +143,7 @@ export class ClaudeCodeScanner implements ToolScanner {
           toolSource: 'claude_code',
           projectName,
           projectPath: detectedCwd ? detectedCwd.replace(/\\/g, '/') : '',
-          timestamp: stats.mtime.toISOString(),
+          timestamp: sessionTimestamp,
           date: dateStr,
           model,
           turns,

@@ -127,7 +127,7 @@ describe('Prompt Lens command surface', () => {
         created_at: '2026-09-05T08:01:00.000Z' })
     ].join('\n'));
 
-    const cliPath = fileURLToPath(new URL('../src/cli.js', import.meta.url));
+    const cliPath = fileURLToPath(new URL('../../cli.js', import.meta.url));
     const result = spawnSync(process.execPath, [cliPath, 'list', '--json', '--all'], {
       encoding: 'utf8',
       env: { ...process.env, HOME: isolatedHome, USERPROFILE: isolatedHome,

@@ -153,8 +153,12 @@ program
   .description('Display aggregate token and cost analytics by tool, model, and project')
   .option('-a, --all', 'Analyze all global sessions across all projects')
   .option('-p, --project <name>', 'Filter by specific project')
-  .action(async (opts) => {
-    const { sessions, scopeLabel } = await loadSessions(opts);
+  .option('-d, --date <YYYY-MM-DD>', 'Filter by exact date (YYYY-MM-DD)')
+  .option('--since <date_or_relative>', 'Filter sessions on or after date (e.g. 7d, 30d, 2026-08-01)')
+  .option('--until <date>', 'Filter sessions up to date (YYYY-MM-DD)')
+  .action(async (opts, cmd) => {
+    const mergedOpts = { ...cmd.optsWithGlobals(), ...opts };
+    const { sessions, scopeLabel } = await loadSessions(mergedOpts);
 
     let totalTokens = 0;
     let totalCost = 0;
@@ -220,8 +224,12 @@ program
   .option('-a, --all', 'List all global sessions')
   .option('--json', 'Output raw JSON')
   .option('-p, --project <name>', 'Filter by project')
-  .action(async (opts) => {
-    const { sessions, scopeLabel } = await loadSessions(opts);
+  .option('-d, --date <YYYY-MM-DD>', 'Filter by exact date (YYYY-MM-DD)')
+  .option('--since <date_or_relative>', 'Filter sessions on or after date (e.g. 7d, 30d, 2026-08-01)')
+  .option('--until <date>', 'Filter sessions up to date (YYYY-MM-DD)')
+  .action(async (opts, cmd) => {
+    const mergedOpts = { ...cmd.optsWithGlobals(), ...opts };
+    const { sessions, scopeLabel } = await loadSessions(mergedOpts);
 
     if (opts.json) {
       console.log(JSON.stringify(sessions, null, 2));
