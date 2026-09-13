@@ -3,8 +3,8 @@ import assert from 'node:assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { exportSessionToMarkdown } from './exporter';
-import { NormalizedSession } from './types';
+import { exportSessionToMarkdown } from '../src/exporter';
+import { NormalizedSession } from '../src/types';
 
 describe('Markdown Transcript Exporter', () => {
   const session: NormalizedSession = {

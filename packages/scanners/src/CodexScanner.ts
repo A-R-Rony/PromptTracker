@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { createHash } from 'crypto';
-import { NormalizedSession, PromptTurn, ScanHints, ToolScanner, approximateTokens, estimateCost, fileSignals } from '../../core/dist';
+import { NormalizedSession, PromptTurn, ScanHints, ToolScanner, approximateTokens, estimateCost, fileSignals } from '@prompttracker/core';
 
 function extractText(content: any): string {
   if (!content) return '';

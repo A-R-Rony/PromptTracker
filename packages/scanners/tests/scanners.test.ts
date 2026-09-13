@@ -3,11 +3,11 @@ import assert from 'node:assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { AntigravityScanner } from './AntigravityScanner';
-import { ClaudeCodeScanner } from './ClaudeCodeScanner';
-import { CodexScanner } from './CodexScanner';
-import { KiroScanner } from './KiroScanner';
-import { OpenCodeScanner } from './OpenCodeScanner';
+import { AntigravityScanner } from '../src/AntigravityScanner';
+import { ClaudeCodeScanner } from '../src/ClaudeCodeScanner';
+import { CodexScanner } from '../src/CodexScanner';
+import { KiroScanner } from '../src/KiroScanner';
+import { OpenCodeScanner } from '../src/OpenCodeScanner';
 
 describe('Scanners Engine (Dynamic Model & Session Extraction)', () => {
   const tmpDir = path.join(os.tmpdir(), 'prompttracker-scanner-tests-' + Date.now());

@@ -1,4 +1,4 @@
-import { NormalizedSession, ToolScanner } from '../../core/dist';
+import { NormalizedSession, ToolScanner } from '@prompttracker/core';
 import { AntigravityScanner } from './AntigravityScanner';
 import { OpenCodeScanner } from './OpenCodeScanner';
 import { ClaudeCodeScanner } from './ClaudeCodeScanner';

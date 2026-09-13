@@ -3,9 +3,9 @@ import assert from 'node:assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { NormalizedSession, SourceSignals, ToolScanner } from './types';
-import { SessionStorageError, SessionStorageManager } from './storage';
-import { SessionSource, SyncReport, syncSessions } from './sync';
+import { NormalizedSession, SourceSignals, ToolScanner } from '../src/types';
+import { SessionStorageError, SessionStorageManager } from '../src/storage';
+import { SessionSource, SyncReport, syncSessions } from '../src/sync';
 
 const temporaryDirectories: string[] = [];
 function databasePath(): string {

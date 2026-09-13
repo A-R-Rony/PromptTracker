@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 import Database from 'better-sqlite3';
 import { NormalizedSession, SessionMetadata, SessionStorageError, SessionStorageManager } from '@prompttracker/core';
 
-const cliPath = fileURLToPath(new URL('./cli.js', import.meta.url));
+const cliPath = fileURLToPath(new URL('../src/cli.js', import.meta.url));
 
 const temporaryHomes: string[] = [];
 afterEach(() => {

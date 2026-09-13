@@ -107,6 +107,40 @@ prompt-lens export <sessionId> --format json --out ./session.json
 
 ---
 
+### 5. Cache Management (`cache`)
+Inspect and manage the local disposable SQLite cache:
+```bash
+# View Cached Content size, session count, and configured limits
+prompt-lens cache status
+prompt-lens cache status --json
+
+# Safely clear cached full Turn content while preserving Session metadata
+prompt-lens cache clear
+
+# Explicitly migrate legacy JSON spill files (~/.prompttracker/cache/*.json) to SQLite
+prompt-lens cache migrate
+```
+
+
+---
+
+## 🔒 Local Storage & Privacy
+Cached prompts and responses are stored strictly locally in plaintext inside Prompt Lens's SQLite database (`~/.prompttracker/data.db`) and are **never transmitted** over the network by cache management or normal CLI operations. The database and containing directory receive restrictive permissions (`0700`/`0600`) on supported platforms.
+
+You can configure retention policies or disable full-content caching entirely by creating `~/.prompttracker/config.json`:
+```json
+{
+  "cache": {
+    "fullContent": true,
+    "maxAgeDays": 30,
+    "maxBytes": 262144000
+  }
+}
+```
+When `fullContent` is set to `false`, Prompt Lens indexes Session metadata, token usage, and analytics without caching conversation Turn bodies.
+
+---
+
 ## 🧠 Why Do We Load Sessions in Two Tiers?
 
 When indexing developers' local coding assistants (like Antigravity, OpenCode, Claude Code, and Codex), conversation logs accumulate **hundreds of megabytes of raw JSON/JSONL transcripts** with large code completions and tool call payloads.
@@ -116,6 +150,7 @@ Loading every historical response at once can make a terminal application slow a
 This is a content-management strategy, not a measurement or guarantee of the Node.js process's RAM usage.
 
 ---
+
 
 ## 🏗️ Architecture
 

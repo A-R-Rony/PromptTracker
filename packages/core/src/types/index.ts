@@ -44,7 +44,7 @@ export interface NormalizedSession {
 export interface SessionMetadata extends Omit<NormalizedSession, 'turns'> {
   turnCount: number;
   hasCachedContent: boolean;
-  ingestionState: 'complete' | 'content-evicted';
+  ingestionState: 'complete' | 'content-evicted' | 'metadata-only';
 }
 
 export interface ScanHints {

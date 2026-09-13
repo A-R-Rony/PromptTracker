@@ -5,7 +5,16 @@ import { Command } from 'commander';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import * as fs from 'fs';
-import { NormalizedSession, SessionMetadata, SessionStorageManager, SyncReport, exportSessionToMarkdown, syncSessions, withTurns } from '@prompttracker/core';
+import {
+  NormalizedSession,
+  SessionMetadata,
+  SessionStorageManager,
+  SyncReport,
+  exportSessionToMarkdown,
+  migrateLegacyJsonCache,
+  syncSessions,
+  withTurns
+} from '@prompttracker/core';
 import { ScannerRegistry } from '@prompttracker/scanners';
 import { filterSessionsByDate, DateFilterOptions } from './dateFilter.js';
 import { filterSessionsByScope } from './scope.js';
@@ -58,6 +67,19 @@ async function loadSessions(options: {
 }
 
 async function syncCacheWithSources(cache: SessionStorageManager): Promise<SyncReport> {
+  try {
+    const migrationReport = await migrateLegacyJsonCache(cache);
+    if (migrationReport.migrated > 0) {
+      console.log(chalk.green(`✓ Migrated ${migrationReport.migrated} legacy session cache file(s) to SQLite.`));
+    }
+    for (const fail of migrationReport.failed) {
+      console.error(chalk.yellow(`⚠ Legacy cache migration warning for ${fail.file}: ${fail.error}`));
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(chalk.yellow(`⚠ Legacy cache migration could not complete: ${message}`));
+  }
+
   const registry = new ScannerRegistry();
   const report = await syncSessions(cache, registry.listScanners());
   for (const failure of report.failedSources) {
@@ -65,6 +87,7 @@ async function syncCacheWithSources(cache: SessionStorageManager): Promise<SyncR
   }
   return report;
 }
+
 
 // 1. Default Action: Launch Interactive TUI or Non-Interactive Table
 export async function runScan(options: {
@@ -246,6 +269,95 @@ program
       }
     }
   });
+
+// 6. Subcommand: cache
+const cacheCommand = program
+  .command('cache')
+  .description('Manage Prompt Lens local SQLite Session cache');
+
+cacheCommand
+  .command('status')
+  .description('Display Cached Content size, session counts, and retention limits')
+  .option('--json', 'Output raw JSON')
+  .action((opts) => {
+    try {
+      const status = storageManager().getCacheStatus();
+      if (opts.json) {
+        console.log(JSON.stringify(status, null, 2));
+        return;
+      }
+
+      console.log(chalk.cyan.bold('\n💾 Prompt Lens Cached Content Status\n'));
+      const table = new Table();
+      table.push(
+        { [chalk.bold('Full-Content Caching')]: status.cacheFullContent ? chalk.green('Enabled') : chalk.yellow('Disabled') },
+        { [chalk.bold('Cached Content Size')]: formatBytes(status.totalContentBytes) },
+        { [chalk.bold('Content-Bearing Sessions')]: status.contentBearingSessions.toLocaleString() },
+        { [chalk.bold('Total Indexed Sessions')]: status.totalSessions.toLocaleString() },
+        { [chalk.bold('Configured Size Limit')]: formatBytes(status.maxBytes) },
+        { [chalk.bold('Configured Age Limit')]: `${status.maxAgeDays} days` }
+      );
+      console.log(table.toString());
+      console.log(chalk.gray('\nCached prompts and responses are stored locally in plaintext and are never transmitted.\n'));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red(`Failed to read cache status: ${message}`));
+      process.exitCode = 1;
+    }
+  });
+
+cacheCommand
+  .command('clear')
+  .description('Safely clear all cached full Turn content while retaining Session metadata')
+  .action(() => {
+    try {
+      const report = storageManager().clearCachedContent();
+      console.log(chalk.green(
+        `✓ Cleared Cached Content: evicted ${report.evictedCount} sessions (${formatBytes(report.bytesFreed)} freed).`
+      ));
+      console.log(chalk.gray('Session metadata index and analytics have been preserved.'));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red(`Failed to clear Cached Content: ${message}`));
+      process.exitCode = 1;
+    }
+  });
+
+cacheCommand
+  .command('migrate')
+  .description('Explicitly migrate legacy JSON spill files to SQLite')
+  .option('--dir <path>', 'Custom path to legacy cache directory')
+  .action(async (opts) => {
+    try {
+      const report = await migrateLegacyJsonCache(storageManager(), {
+        legacyCacheDir: opts.dir
+      });
+      console.log(chalk.cyan.bold('\n📦 Legacy Cache Migration Report\n'));
+      console.log(`Discovered: ${report.discovered}`);
+      console.log(`Migrated:   ${chalk.green(report.migrated)}`);
+      console.log(`Skipped:    ${report.skipped}`);
+      if (report.failed.length > 0) {
+        console.log(`Failed:     ${chalk.red(report.failed.length)}`);
+        for (const f of report.failed) {
+          console.error(chalk.yellow(` - ${f.file}: ${f.error}`));
+        }
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red(`Legacy cache migration failed: ${message}`));
+      process.exitCode = 1;
+    }
+  });
+
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+}
+
 
 // Primary default options
 program

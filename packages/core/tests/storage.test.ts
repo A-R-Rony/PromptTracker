@@ -3,8 +3,8 @@ import assert from 'node:assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { SessionStorageError, SessionStorageManager } from './storage';
-import { NormalizedSession } from './types';
+import { SessionStorageError, SessionStorageManager } from '../src/storage';
+import { NormalizedSession } from '../src/types';
 
 const temporaryDirectories: string[] = [];
 function databasePath(): string {

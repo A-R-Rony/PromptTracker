@@ -11,8 +11,8 @@
     "promptburn": "./dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
-    "test": "node dist/cli.test.js && node dist/cli.sync.test.js && node dist/ui/ui.test.js"
+    "build": "tsc && tsc -p tsconfig.test.json",
+    "test": "node dist/tests/tests/cli.test.js && node dist/tests/tests/cli.sync.test.js && node dist/tests/tests/cli.cache.test.js && node dist/tests/tests/ui/ui.test.js"
   },
   "dependencies": {
     "@prompttracker/core": "*",

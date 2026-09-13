@@ -6,9 +6,9 @@ import * as path from 'path';
 import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { NormalizedSession, SessionMetadata, exportSessionToMarkdown } from '@prompttracker/core';
-import { filterSessionsByDate, parseRelativeDate } from './dateFilter.js';
-import { filterSessionsByScope } from './scope.js';
-import { program } from './cli.js';
+import { filterSessionsByDate, parseRelativeDate } from '../src/dateFilter.js';
+import { filterSessionsByScope } from '../src/scope.js';
+import { program } from '../src/cli.js';
 
 describe('CLI Package Utilities', () => {
   const sampleSessions: NormalizedSession[] = [
@@ -127,7 +127,7 @@ describe('Prompt Lens command surface', () => {
         created_at: '2026-09-05T08:01:00.000Z' })
     ].join('\n'));
 
-    const cliPath = fileURLToPath(new URL('./cli.js', import.meta.url));
+    const cliPath = fileURLToPath(new URL('../src/cli.js', import.meta.url));
     const result = spawnSync(process.execPath, [cliPath, 'list', '--json', '--all'], {
       encoding: 'utf8',
       env: { ...process.env, HOME: isolatedHome, USERPROFILE: isolatedHome,

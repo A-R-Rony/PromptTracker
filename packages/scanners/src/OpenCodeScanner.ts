@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { execSync } from 'child_process';
 import { createHash } from 'crypto';
-import { NormalizedSession, PromptTurn, ScanHints, ToolScanner, TokenSource, approximateTokens, estimateCost, fileSignals } from '../../core/dist';
+import { NormalizedSession, PromptTurn, ScanHints, ToolScanner, TokenSource, approximateTokens, estimateCost, fileSignals } from '@prompttracker/core';
 
 export class OpenCodeScanner implements ToolScanner {
   readonly name = 'opencode';

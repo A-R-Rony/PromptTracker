@@ -5,8 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "test": "node --test dist/scanners.test.js"
+    "build": "tsc && tsc -p tsconfig.test.json",
+    "test": "node --test dist/tests/tests/scanners.test.js"
   },
   "dependencies": {
     "@prompttracker/core": "*"

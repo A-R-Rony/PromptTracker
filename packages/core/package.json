@@ -5,8 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "test": "node --test dist/pricing.test.js dist/storage.test.js dist/sync.test.js dist/exporter.test.js"
+    "build": "tsc && tsc -p tsconfig.test.json",
+    "test": "node --test dist/tests/tests/pricing.test.js dist/tests/tests/storage.test.js dist/tests/tests/sync.test.js dist/tests/tests/retention.test.js dist/tests/tests/exporter.test.js dist/tests/tests/legacyMigration.test.js"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",

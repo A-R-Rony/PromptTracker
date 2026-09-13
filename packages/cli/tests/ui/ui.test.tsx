@@ -2,8 +2,8 @@ import React from 'react';
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { render } from 'ink-testing-library';
-import { Header } from './Header.js';
-import { Footer } from './Footer.js';
+import { Header } from '../../src/ui/Header.js';
+import { Footer } from '../../src/ui/Footer.js';
 
 describe('Prompt Lens terminal interface', () => {
   it('offers date and scope navigation without search or memory claims', () => {

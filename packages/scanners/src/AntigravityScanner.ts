@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { NormalizedSession, PromptTurn, ScanHints, ToolScanner, approximateTokens, estimateCost, fileSignals } from '../../core/dist';
+import { NormalizedSession, PromptTurn, ScanHints, ToolScanner, approximateTokens, estimateCost, fileSignals } from '@prompttracker/core';
 
 function cleanPromptText(raw: string): string {
   if (!raw) return '';

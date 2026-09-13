@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { estimateCost, approximateTokens } from './pricing';
+import { estimateCost, approximateTokens } from '../src/pricing';
 
 describe('Pricing Engine', () => {
   it('approximates token count accurately from string length (1 token per 4 chars)', () => {
