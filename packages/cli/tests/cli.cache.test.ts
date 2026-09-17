@@ -27,6 +27,8 @@ function runCli(home: string, databasePath: string, args: string[], extraEnv: Re
       ...process.env,
       HOME: home,
       USERPROFILE: home,
+      APPDATA: path.join(home, 'AppData', 'Roaming'),
+      LOCALAPPDATA: path.join(home, 'AppData', 'Local'),
       PROMPT_LENS_CACHE_PATH: databasePath,
       ...extraEnv
     }

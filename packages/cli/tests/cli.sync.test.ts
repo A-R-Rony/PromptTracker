@@ -24,7 +24,14 @@ function newIsolatedHome(): string {
 function runCli(home: string, databasePath: string, args: string[]) {
   return spawnSync(process.execPath, [cliPath, ...args], {
     encoding: 'utf8',
-    env: { ...process.env, HOME: home, USERPROFILE: home, PROMPT_LENS_CACHE_PATH: databasePath }
+    env: {
+      ...process.env,
+      HOME: home,
+      USERPROFILE: home,
+      APPDATA: path.join(home, 'AppData', 'Roaming'),
+      LOCALAPPDATA: path.join(home, 'AppData', 'Local'),
+      PROMPT_LENS_CACHE_PATH: databasePath
+    }
   });
 }
 
