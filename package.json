@@ -6,9 +6,9 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspace=@prompttracker/core --workspace=@prompttracker/scanners --workspace=@prompttracker/cli",
-    "build:all": "npm run build --workspaces",
-    "test": "npm run test --workspace=@prompttracker/core --workspace=@prompttracker/scanners --workspace=@prompttracker/cli"
+    "build": "npm run build --workspace=@prompttracker/core && npm run build --workspace=@prompttracker/scanners && npm run build --workspace=@ar_rony1/prompt-lens && npm run build --workspace=@prompttracker/web",
+    "build:all": "npm run build --workspace=@prompttracker/core && npm run build --workspace=@prompttracker/scanners && npm run build --workspace=@ar_rony1/prompt-lens && npm run build --workspace=@prompttracker/web",
+    "test": "npm run test --workspace=@prompttracker/core && npm run test --workspace=@prompttracker/scanners && npm run test --workspace=@ar_rony1/prompt-lens && npm run test --workspace=@prompttracker/web"
   },
   "devDependencies": {
     "typescript": "^5.5.2"
