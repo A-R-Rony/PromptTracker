@@ -128,10 +128,17 @@ describe('Prompt Lens command surface', () => {
     ].join('\n'));
 
     const cliPath = fileURLToPath(new URL('../../cli.js', import.meta.url));
+    const testEnv = {
+      ...process.env,
+      HOME: isolatedHome,
+      USERPROFILE: isolatedHome,
+      APPDATA: path.join(isolatedHome, 'AppData', 'Roaming'),
+      LOCALAPPDATA: path.join(isolatedHome, 'AppData', 'Local'),
+      PROMPT_LENS_CACHE_PATH: databasePath
+    };
     const result = spawnSync(process.execPath, [cliPath, 'list', '--json', '--all'], {
       encoding: 'utf8',
-      env: { ...process.env, HOME: isolatedHome, USERPROFILE: isolatedHome,
-        PROMPT_LENS_CACHE_PATH: databasePath }
+      env: testEnv
     });
 
     assert.strictEqual(result.status, 0, result.stderr);
@@ -142,8 +149,7 @@ describe('Prompt Lens command surface', () => {
 
     const repeated = spawnSync(process.execPath, [cliPath, 'list', '--json', '--all'], {
       encoding: 'utf8',
-      env: { ...process.env, HOME: isolatedHome, USERPROFILE: isolatedHome,
-        PROMPT_LENS_CACHE_PATH: databasePath }
+      env: testEnv
     });
     assert.strictEqual(repeated.status, 0, repeated.stderr);
     const repeatedSessions = JSON.parse(repeated.stdout) as SessionMetadata[];
@@ -153,8 +159,7 @@ describe('Prompt Lens command surface', () => {
     fs.rmSync(path.join(isolatedHome, '.gemini'), { recursive: true, force: true });
     const afterSourceRemoval = spawnSync(process.execPath, [cliPath, 'list', '--json', '--all'], {
       encoding: 'utf8',
-      env: { ...process.env, HOME: isolatedHome, USERPROFILE: isolatedHome,
-        PROMPT_LENS_CACHE_PATH: databasePath }
+      env: testEnv
     });
     assert.strictEqual(afterSourceRemoval.status, 0, afterSourceRemoval.stderr);
     assert.strictEqual((JSON.parse(afterSourceRemoval.stdout) as SessionMetadata[]).length, 0);
@@ -164,8 +169,7 @@ describe('Prompt Lens command surface', () => {
       cliPath, 'export', 'antigravity-fixture-session', '--format', 'json', '--out', exportedPath
     ], {
       encoding: 'utf8',
-      env: { ...process.env, HOME: isolatedHome, USERPROFILE: isolatedHome,
-        PROMPT_LENS_CACHE_PATH: databasePath }
+      env: testEnv
     });
     assert.notStrictEqual(exportResult.status, 0, exportResult.stdout);
     assert.ok(exportResult.stderr.includes('not found'));
