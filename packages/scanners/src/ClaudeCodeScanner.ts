@@ -45,13 +45,14 @@ export class ClaudeCodeScanner implements ToolScanner {
 
   async scan(options?: ScanHints): Promise<NormalizedSession[]> {
     const sessions: NormalizedSession[] = [];
+    const home = os.homedir();
     const possibleDirs = this.customBaseDir
       ? [this.customBaseDir]
       : [
-          path.join(os.homedir(), '.claude'),
-          path.join(os.homedir(), '.config', 'claude'),
-          process.env.APPDATA ? path.join(process.env.APPDATA, 'claude') : ''
-        ].filter(Boolean).filter(d => fs.existsSync(d));
+          path.join(home, '.claude'),
+          path.join(home, '.config', 'claude'),
+          path.join(home, 'AppData', 'Roaming', 'claude')
+        ].filter(d => fs.existsSync(d));
 
     if (possibleDirs.length === 0) return sessions;
 

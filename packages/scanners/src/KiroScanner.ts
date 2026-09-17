@@ -30,13 +30,14 @@ export class KiroScanner implements ToolScanner {
 
   async scan(options?: ScanHints): Promise<NormalizedSession[]> {
     const sessions: NormalizedSession[] = [];
+    const home = os.homedir();
     const possibleDirs = this.customBaseDir
       ? [this.customBaseDir]
       : [
-          path.join(os.homedir(), '.kiro'),
-          path.join(os.homedir(), '.config', 'kiro'),
-          process.env.APPDATA ? path.join(process.env.APPDATA, 'kiro') : ''
-        ].filter(Boolean).filter(d => fs.existsSync(d));
+          path.join(home, '.kiro'),
+          path.join(home, '.config', 'kiro'),
+          path.join(home, 'AppData', 'Roaming', 'kiro')
+        ].filter(d => fs.existsSync(d));
 
     if (possibleDirs.length === 0) return sessions;
 
