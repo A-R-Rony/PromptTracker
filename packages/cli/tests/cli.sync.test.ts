@@ -122,10 +122,7 @@ function exportSession(home: string, databasePath: string, sessionId: string, ou
 }
 
 describe('Incremental sync across CLI process restarts', () => {
-  const sqlite3Available = spawnSync('sqlite3', ['-version']).status === 0;
-
   it('indexes all five authoritative sources on a first scan', () => {
-    if (!sqlite3Available) return;
     const home = newIsolatedHome();
     const databasePath = path.join(home, '.prompttracker', 'data.db');
     writeAllFixtures(home);
@@ -137,7 +134,6 @@ describe('Incremental sync across CLI process restarts', () => {
   });
 
   it('produces identical user-visible results and no duplication on a repeated scan', () => {
-    if (!sqlite3Available) return;
     const home = newIsolatedHome();
     const databasePath = path.join(home, '.prompttracker', 'data.db');
     writeAllFixtures(home);
@@ -161,7 +157,6 @@ describe('Incremental sync across CLI process restarts', () => {
   });
 
   it('replaces stale metadata and content for changed source Sessions', () => {
-    if (!sqlite3Available) return;
     const home = newIsolatedHome();
     const databasePath = path.join(home, '.prompttracker', 'data.db');
     writeAllFixtures(home);
@@ -179,7 +174,6 @@ describe('Incremental sync across CLI process restarts', () => {
   });
 
   it('reconciles deleted source Sessions out of the cache', () => {
-    if (!sqlite3Available) return;
     const home = newIsolatedHome();
     const databasePath = path.join(home, '.prompttracker', 'data.db');
     writeAllFixtures(home);
@@ -196,7 +190,6 @@ describe('Incremental sync across CLI process restarts', () => {
   });
 
   it('rehydrates evicted content from the authoritative source and recaches it', () => {
-    if (!sqlite3Available) return;
     const home = newIsolatedHome();
     const databasePath = path.join(home, '.prompttracker', 'data.db');
     writeAllFixtures(home);
@@ -220,17 +213,13 @@ describe('Incremental sync across CLI process restarts', () => {
   });
 
   it('warns and retains cached Sessions when an authoritative source becomes unreadable', () => {
-    if (!sqlite3Available) return;
     const home = newIsolatedHome();
     const databasePath = path.join(home, '.prompttracker', 'data.db');
     writeAllFixtures(home);
     assert.strictEqual(listSessions(home, databasePath).length, 5);
 
     fs.writeFileSync(path.join(home, '.local', 'share', 'opencode', 'opencode.db'), 'this is not a database');
-    const result = spawnSync(process.execPath, [cliPath, 'list', '--json', '--all'], {
-      encoding: 'utf8',
-      env: { ...process.env, HOME: home, USERPROFILE: home, PROMPT_LENS_CACHE_PATH: databasePath }
-    });
+    const result = runCli(home, databasePath, ['list', '--json', '--all']);
     assert.strictEqual(result.status, 0, result.stderr);
     assert.ok(result.stderr.includes('opencode'));
     const sessions = JSON.parse(result.stdout) as SessionMetadata[];
@@ -240,7 +229,6 @@ describe('Incremental sync across CLI process restarts', () => {
   });
 
   it('reconciles malformed changed records without corrupting unrelated cached Sessions', () => {
-    if (!sqlite3Available) return;
     const home = newIsolatedHome();
     const databasePath = path.join(home, '.prompttracker', 'data.db');
     writeAllFixtures(home);
@@ -254,7 +242,6 @@ describe('Incremental sync across CLI process restarts', () => {
   });
 
   it('does not retain unique historical telemetry after every authoritative copy disappears', () => {
-    if (!sqlite3Available) return;
     const home = newIsolatedHome();
     const databasePath = path.join(home, '.prompttracker', 'data.db');
     writeAllFixtures(home);
