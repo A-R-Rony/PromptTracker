@@ -46,8 +46,8 @@ export const CostCalculator: React.FC = () => {
           </p>
         </div>
 
-        <div className="glass-panel" style={{ padding: '2.5rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2.5rem' }}>
+        <div className="glass-panel" style={{ padding: 'clamp(1.25rem, 3vw, 2.5rem)' }}>
+          <div className="calc-grid">
             
             {/* Left Controls */}
             <div>
@@ -133,7 +133,7 @@ export const CostCalculator: React.FC = () => {
             <div style={{
               background: '#040812',
               borderRadius: '12px',
-              padding: '2rem',
+              padding: 'clamp(1.25rem, 3vw, 2rem)',
               border: '1px solid rgba(0, 242, 254, 0.2)',
               display: 'flex',
               flexDirection: 'column',
@@ -143,7 +143,7 @@ export const CostCalculator: React.FC = () => {
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
                   Estimated Monthly Spend
                 </div>
-                <div style={{ fontSize: '3rem', fontWeight: 800, color: '#00f5a0', lineHeight: 1, marginBottom: '1rem' }}>
+                <div style={{ fontSize: 'clamp(2.2rem, 5vw, 3rem)', fontWeight: 800, color: '#00f5a0', lineHeight: 1, marginBottom: '1rem' }}>
                   ${monthlyCost.toFixed(2)}
                 </div>
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '1.5rem' }}>

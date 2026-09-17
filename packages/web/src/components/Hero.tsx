@@ -21,9 +21,9 @@ export const Hero: React.FC = () => {
           rel="noreferrer"
           style={{ textDecoration: 'none', display: 'inline-flex', marginBottom: '1.25rem' }}
         >
-          <div className="pill-badge live-npm-badge" style={{ gap: '0.6rem', padding: '0.35rem 1rem', fontSize: '0.8rem', color: '#f1f5f9', cursor: 'pointer' }}>
+          <div className="pill-badge live-npm-badge" style={{ gap: '0.6rem', padding: '0.35rem 1rem', fontSize: '0.8rem', color: '#f1f5f9', cursor: 'pointer', maxWidth: '100%', boxSizing: 'border-box' }}>
             <span className="live-beacon"></span>
-            <span style={{ fontWeight: 600 }}>
+            <span className="hero-live-badge-text" style={{ fontWeight: 600 }}>
               <span style={{ color: '#00f2fe' }}>Live on npm</span> • Universal AI Coding Assistant Tracker ↗
             </span>
           </div>
@@ -31,7 +31,7 @@ export const Hero: React.FC = () => {
 
         {/* Main Headline */}
         <h1 style={{
-          fontSize: 'clamp(2rem, 3.5vw, 2.9rem)',
+          fontSize: 'clamp(1.65rem, 5.5vw, 2.9rem)',
           lineHeight: 1.22,
           fontWeight: 800,
           marginBottom: '1rem',
@@ -43,7 +43,7 @@ export const Hero: React.FC = () => {
 
         {/* Crisp, clean Hero Subtitle */}
         <p style={{
-          fontSize: '1.05rem',
+          fontSize: 'clamp(0.92rem, 2.5vw, 1.05rem)',
           color: 'var(--text-muted)',
           maxWidth: '600px',
           margin: '0 auto 2rem',
@@ -54,10 +54,12 @@ export const Hero: React.FC = () => {
         </p>
 
         {/* 1-Click Copy Box */}
-        <div style={{ maxWidth: '480px', margin: '0 auto 1.5rem' }}>
-          <div className="code-box" style={{ padding: '0.75rem 1.1rem' }}>
-            <span style={{ color: 'var(--text-dim)' }}>$</span>
-            <code style={{ fontSize: '0.95rem', fontWeight: 600 }}>npx @ar_rony1/prompt-lens</code>
+        <div style={{ maxWidth: '480px', margin: '0 auto 1.5rem', width: '100%' }}>
+          <div className="code-box" style={{ padding: '0.75rem 1.1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, overflow: 'hidden' }}>
+              <span style={{ color: 'var(--text-dim)' }}>$</span>
+              <code style={{ fontSize: 'clamp(0.82rem, 3.5vw, 0.95rem)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis' }}>npx @ar_rony1/prompt-lens</code>
+            </div>
             <button
               className="copy-btn"
               onClick={copyCommand}

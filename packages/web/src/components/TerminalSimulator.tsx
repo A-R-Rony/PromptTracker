@@ -170,8 +170,8 @@ export const TerminalSimulator: React.FC = () => {
               background: 'rgba(0, 242, 254, 0.03)'
             }}>
               {/* Row 1: Scope & Date Presets */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <div>
+              <div className="terminal-header-row">
+                <div style={{ wordBreak: 'break-word' }}>
                   <span style={{ color: '#00f2fe', fontWeight: 'bold' }}>🔍 PROMPT-LENS</span>
                   <span style={{ color: '#64748b' }}> │ </span>
                   <span style={{ color: '#ffffff', fontWeight: 'bold' }}>Scope: </span>
@@ -181,7 +181,7 @@ export const TerminalSimulator: React.FC = () => {
                   <span style={{ color: '#64748b', cursor: 'pointer' }} onClick={() => setIsGlobal(!isGlobal)}> [a]</span>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <div className="terminal-presets-list">
                   {[
                     { key: '1', label: 'Today', val: 'today' },
                     { key: '2', label: 'Yesterday', val: 'yesterday' },
@@ -195,13 +195,14 @@ export const TerminalSimulator: React.FC = () => {
                         key={p.val}
                         onClick={() => setActiveDatePreset(p.val)}
                         style={{
-                          padding: '0.1rem 0.4rem',
+                          padding: '0.15rem 0.45rem',
                           borderRadius: '4px',
                           background: active ? '#00f2fe' : 'transparent',
                           color: active ? '#040812' : '#38bdf8',
                           fontWeight: active ? 'bold' : 'normal',
                           cursor: 'pointer',
-                          fontSize: '0.8rem'
+                          fontSize: '0.8rem',
+                          whiteSpace: 'nowrap'
                         }}
                       >
                         [{p.key}] {p.label}
@@ -212,15 +213,21 @@ export const TerminalSimulator: React.FC = () => {
               </div>
 
               {/* Row 2: Aggregate Metrics Bar */}
-              <div style={{ fontSize: '0.88rem' }}>
-                <span style={{ color: '#ffffff' }}>Prompts: </span>
-                <strong style={{ color: '#00f5a0' }}>{totalPrompts}</strong>
-                <span style={{ color: '#64748b' }}> │ </span>
-                <span style={{ color: '#ffffff' }}>Est. Tokens: </span>
-                <strong style={{ color: '#00f2fe' }}>{totalTokens.toLocaleString()}</strong>
-                <span style={{ color: '#64748b' }}> │ </span>
-                <span style={{ color: '#ffffff' }}>Est. Cost: </span>
-                <strong style={{ color: '#facc15' }}>${totalCost.toFixed(4)}</strong>
+              <div className="terminal-metrics-row">
+                <div>
+                  <span style={{ color: '#ffffff' }}>Prompts: </span>
+                  <strong style={{ color: '#00f5a0' }}>{totalPrompts}</strong>
+                  <span style={{ color: '#64748b' }}> │ </span>
+                </div>
+                <div>
+                  <span style={{ color: '#ffffff' }}>Est. Tokens: </span>
+                  <strong style={{ color: '#00f2fe' }}>{totalTokens.toLocaleString()}</strong>
+                  <span style={{ color: '#64748b' }}> │ </span>
+                </div>
+                <div>
+                  <span style={{ color: '#ffffff' }}>Est. Cost: </span>
+                  <strong style={{ color: '#facc15' }}>${totalCost.toFixed(4)}</strong>
+                </div>
               </div>
             </div>
 
@@ -230,9 +237,10 @@ export const TerminalSimulator: React.FC = () => {
                 border: '1px solid rgba(0, 242, 254, 0.4)',
                 borderRadius: '8px',
                 padding: '0.75rem 1rem',
-                background: 'rgba(0, 0, 0, 0.5)'
+                background: 'rgba(0, 0, 0, 0.5)',
+                overflowX: 'auto'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.6rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.4rem' }}>
                   <span style={{ color: '#00f2fe', fontWeight: 'bold', fontSize: '0.85rem' }}>
                     📋 SESSIONS LIST ({selectedIdx + 1} of {activeSessions.length})
                   </span>
@@ -246,30 +254,25 @@ export const TerminalSimulator: React.FC = () => {
                   return (
                     <div
                       key={sess.id}
+                      className="terminal-session-row"
                       onClick={() => setSelectedIdx(idx)}
                       onDoubleClick={() => setViewMode('detail')}
                       style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '0.35rem 0.5rem',
-                        borderRadius: '4px',
                         background: isSelected ? 'rgba(0, 242, 254, 0.12)' : 'transparent',
-                        cursor: 'pointer'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                        <span style={{ color: isSelected ? '#00f2fe' : 'transparent', fontWeight: 'bold' }}>▶</span>
-                        <span style={{ color: isSelected ? '#ffffff' : '#94a3b8' }}>{sess.date}</span>
-                        <span style={{ color: '#64748b' }}>│</span>
-                        <span style={{ color: sess.toolColor, fontWeight: 'bold', fontSize: '0.8rem' }}>[{sess.tool}]</span>
-                        <span style={{ color: '#64748b' }}>│</span>
-                        <span style={{ color: isSelected ? '#facc15' : '#e2e8f0', fontWeight: isSelected ? '600' : '400' }}>
+                      <div className="terminal-session-left">
+                        <span style={{ color: isSelected ? '#00f2fe' : 'transparent', fontWeight: 'bold', flexShrink: 0 }}>▶</span>
+                        <span style={{ color: isSelected ? '#ffffff' : '#94a3b8', flexShrink: 0 }}>{sess.date}</span>
+                        <span style={{ color: '#64748b', flexShrink: 0 }}>│</span>
+                        <span style={{ color: sess.toolColor, fontWeight: 'bold', fontSize: '0.8rem', flexShrink: 0 }}>[{sess.tool}]</span>
+                        <span style={{ color: '#64748b', flexShrink: 0 }}>│</span>
+                        <span style={{ color: isSelected ? '#facc15' : '#e2e8f0', fontWeight: isSelected ? '600' : '400', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {sess.summary} <span style={{ color: '#64748b' }}>[{sess.project}]</span>
                         </span>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+                      <div className="terminal-session-right">
                         <span style={{ color: '#64748b' }}>│</span>
                         <span style={{ color: isSelected ? '#00f2fe' : '#94a3b8' }}>{sess.tokens.toLocaleString()} tok</span>
                         <span style={{ color: '#64748b' }}>│</span>
@@ -286,9 +289,9 @@ export const TerminalSimulator: React.FC = () => {
                 padding: '1rem',
                 background: 'rgba(0, 0, 0, 0.6)'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
                   <div>
-                    <span style={{ color: '#00f5a0', fontWeight: 'bold' }}>🔍 TURN INSPECTION: {currentSession?.summary}</span>
+                    <span style={{ color: '#00f5a0', fontWeight: 'bold', wordBreak: 'break-word' }}>🔍 TURN INSPECTION: {currentSession?.summary}</span>
                   </div>
                   <span style={{ color: '#38bdf8', cursor: 'pointer', fontSize: '0.85rem' }} onClick={() => setViewMode('list')}>
                     [b] Back to List
@@ -300,13 +303,13 @@ export const TerminalSimulator: React.FC = () => {
                     <div style={{ color: '#facc15', fontWeight: 'bold', marginBottom: '0.3rem', fontSize: '0.85rem' }}>
                       🧑 Turn #{tIdx + 1} Prompt:
                     </div>
-                    <div style={{ color: '#e2e8f0', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                    <div style={{ color: '#e2e8f0', marginBottom: '0.5rem', fontSize: '0.9rem', wordBreak: 'break-word' }}>
                       {turn.userPrompt}
                     </div>
                     <div style={{ color: '#00f2fe', fontWeight: 'bold', marginBottom: '0.2rem', fontSize: '0.85rem' }}>
                       🤖 Assistant Response ({turn.tokens.toLocaleString()} tokens):
                     </div>
-                    <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
+                    <div style={{ color: '#94a3b8', fontSize: '0.85rem', wordBreak: 'break-word' }}>
                       {turn.assistantSummary}
                     </div>
                   </div>
@@ -315,16 +318,7 @@ export const TerminalSimulator: React.FC = () => {
             )}
 
             {/* Footer Status Bar */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginTop: '1rem',
-              padding: '0.4rem 0.8rem',
-              background: '#040812',
-              borderRadius: '6px',
-              fontSize: '0.8rem',
-              color: '#64748b'
-            }}>
+            <div className="terminal-footer-bar">
               <div>
                 <span style={{ color: '#38bdf8' }}>↑↓/jk</span> Move • <span style={{ color: '#38bdf8' }}>1-5</span> Dates • <span style={{ color: '#38bdf8' }}>a</span> Scope • <span style={{ color: '#38bdf8' }}>Enter</span> Inspect • <span style={{ color: '#38bdf8' }}>q</span> Quit
               </div>

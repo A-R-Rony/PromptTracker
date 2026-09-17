@@ -47,8 +47,8 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* Links & Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div className="code-box" style={{ padding: '0.4rem 0.85rem', fontSize: '0.82rem' }}>
+        <div className="navbar-actions">
+          <div className="code-box navbar-code-box" style={{ padding: '0.4rem 0.85rem', fontSize: '0.82rem' }}>
             <code>npx @ar_rony1/prompt-lens</code>
             <button className="copy-btn" onClick={copyCommand} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.25rem 0.65rem', fontSize: '0.78rem' }}>
               {copied ? (
@@ -70,7 +70,7 @@ export const Navbar: React.FC = () => {
             target="_blank"
             rel="noreferrer"
             className="btn-secondary"
-            style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}
+            style={{ padding: '0.45rem 1rem', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
           >
             ★ Star on GitHub
           </a>

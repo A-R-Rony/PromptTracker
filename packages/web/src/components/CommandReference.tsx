@@ -128,11 +128,7 @@ export const CommandReference: React.FC = () => {
         </div>
 
         {/* Compact 2-Column Responsive Layout */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(440px, 1fr))',
-          gap: '1.25rem'
-        }}>
+        <div className="command-grid">
           {filteredCommands.map((item) => {
             const isCopied = copiedId === item.id;
             return (

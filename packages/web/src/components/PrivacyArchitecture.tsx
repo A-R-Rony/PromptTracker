@@ -16,7 +16,7 @@ export const PrivacyArchitecture: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
+        <div className="privacy-grid" style={{ marginBottom: '2.5rem' }}>
           
           <div className="glass-panel" style={{ padding: '1.75rem' }}>
             <div style={{
@@ -81,7 +81,7 @@ export const PrivacyArchitecture: React.FC = () => {
         </div>
 
         {/* Cache Command Reference Callout */}
-        <div className="glass-panel" style={{ padding: '1.5rem 2rem', background: 'rgba(4, 8, 18, 0.85)', border: '1px solid rgba(0, 242, 254, 0.25)' }}>
+        <div className="glass-panel" style={{ padding: 'clamp(1rem, 2.5vw, 1.5rem) clamp(1rem, 3vw, 2rem)', background: 'rgba(4, 8, 18, 0.85)', border: '1px solid rgba(0, 242, 254, 0.25)' }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
             <div>
               <h4 style={{ fontSize: '1.05rem', color: '#00f2fe', marginBottom: '0.2rem' }}>Full Control Over Local Storage</h4>

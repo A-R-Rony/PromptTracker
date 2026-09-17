@@ -309,6 +309,143 @@ h1, h2, h3, h4, h5 {
     display: flex !important;
   }
 }
+
+/* Mobile Responsiveness & Layout Utilities */
+@media (max-width: 640px) {
+  .container {
+    padding: 0 1rem;
+  }
+
+  h1 {
+    font-size: clamp(1.65rem, 6vw, 2.2rem) !important;
+  }
+
+  h2 {
+    font-size: clamp(1.4rem, 5vw, 1.85rem) !important;
+  }
+
+  .glass-panel {
+    border-radius: 12px;
+  }
+}
+
+/* Responsive Grids */
+.command-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: 1.25rem;
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 1.5rem;
+}
+
+.calc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 2rem;
+}
+
+.privacy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 1.5rem;
+}
+
+/* Terminal Simulator Responsive Elements */
+.terminal-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.terminal-presets-list {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.terminal-metrics-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.terminal-session-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.terminal-session-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1 1 240px;
+}
+
+.terminal-session-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  font-size: 0.82rem;
+}
+
+.terminal-footer-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.5rem 0.8rem;
+  background: #040812;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+/* Navbar Responsive Adapters */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (max-width: 580px) {
+  .navbar-code-box {
+    display: none !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .hero-live-badge-text {
+    font-size: 0.72rem !important;
+  }
+  
+  .terminal-session-left {
+    white-space: normal !important;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

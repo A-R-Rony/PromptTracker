@@ -73,11 +73,7 @@ export const ToolScannersGrid: React.FC = () => {
           </p>
         </div>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '1.5rem'
-        }}>
+        <div className="tools-grid">
           {TOOLS.map((tool) => (
             <div key={tool.name} className="glass-panel" style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
