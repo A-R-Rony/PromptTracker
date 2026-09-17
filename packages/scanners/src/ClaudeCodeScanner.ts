@@ -51,7 +51,7 @@ export class ClaudeCodeScanner implements ToolScanner {
       : [
           path.join(home, '.claude'),
           path.join(home, '.config', 'claude'),
-          path.join(home, 'AppData', 'Roaming', 'claude')
+          path.join(process.env.APPDATA || path.join(home, 'AppData', 'Roaming'), 'claude')
         ].filter(d => fs.existsSync(d));
 
     if (possibleDirs.length === 0) return sessions;

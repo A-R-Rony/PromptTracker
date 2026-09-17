@@ -36,7 +36,7 @@ export class KiroScanner implements ToolScanner {
       : [
           path.join(home, '.kiro'),
           path.join(home, '.config', 'kiro'),
-          path.join(home, 'AppData', 'Roaming', 'kiro')
+          path.join(process.env.APPDATA || path.join(home, 'AppData', 'Roaming'), 'kiro')
         ].filter(d => fs.existsSync(d));
 
     if (possibleDirs.length === 0) return sessions;
